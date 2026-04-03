@@ -2,6 +2,17 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
+    <script>
+  // Sprawdzamy język przeglądarki użytkownika
+  const userLang = navigator.language || navigator.userLanguage; 
+  
+  // Jeśli język nie zaczyna się od "pl", przekieruj na wersję angielską
+  // Dodajemy warunek, aby nie przekierowywać w nieskończoność (sessionStorage)
+  if (!userLang.startsWith('pl') && !sessionStorage.getItem('redirected')) {
+      sessionStorage.setItem('redirected', 'true');
+      window.location.href = 'index-en.html';
+  }
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LaserProfit.eu – Free Laser Engraving Price Calculator 2026</title>
 <meta name="description" content="LaserProfit.eu – Free laser engraving & cutting price calculator. 14 languages, 12 currencies. Kalkulator wyceny grawerowania laserem 2026.">
