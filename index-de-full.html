@@ -266,7 +266,7 @@ footer{text-align:center;margin-top:65px;padding:32px;color:var(--muted);border-
     <p class="calc-sub" data-t="calc_sub">Legen Sie Ihre Tarife fest und sehen Sie Ihren echten Gewinn.</p>
     <div class="settings-bar">
         <div class="cs-grp"><span class="cs-lbl" data-t="cur_label">💱 Berichtswährung</span><div class="chips" id="curChips"></div></div>
-        <div class="cs-grp"><span class="cs-lbl" data-t="lang_label">🌍 Berichtssprache (TXT/PDF)</span><div class="chips" id="langChips"></div></div>
+        <div class="cs-grp"><span class="cs-lbl" data-t="lang_label">🌍 Berichtssprache TXT/PDF</span><div class="chips" id="langChips"></div></div>
     </div>
     <div class="box-muted">
         <div class="form-2">
@@ -469,6 +469,24 @@ footer{text-align:center;margin-top:65px;padding:32px;color:var(--muted);border-
 
 <script>
 // ============================================================
+// AUTO-REDIRECT basierend auf Browsersprache
+// ============================================================
+(function(){
+    const path=window.location.pathname;
+    const isDE=path.startsWith('/de');
+    const isEN=path.startsWith('/en');
+    const isPL=!isDE&&!isEN;
+    if(document.cookie.indexOf('lp_redirect=1')!==-1)return;
+    document.cookie='lp_redirect=1;max-age=3600;path=/';
+    const lang=(navigator.language||navigator.userLanguage||'de').toLowerCase();
+    const isDEb=lang.startsWith('de');
+    const isENb=lang.startsWith('en');
+    if(isDEb&&!isDE){window.location.href='https://www.laserprofit.eu/de/';}
+    else if(isENb&&!isEN){window.location.href='https://www.laserprofit.eu/en/';}
+    else if(!isDEb&&!isENb&&!isPL){window.location.href='https://www.laserprofit.eu/';}
+})();
+
+// ============================================================
 // ÜBERSETZUNGEN (gleiche Struktur wie Original – nur DE & EN als Hauptsprachen)
 // ============================================================
 const UI = {
@@ -626,9 +644,8 @@ const CURRENCIES=[
     {code:'HUF',sym:'Ft',flag:'🇭🇺'},{code:'RON',sym:'lei',flag:'🇷🇴'},
 ];
 const LANGUAGES=[
-    {code:'de',flag:'https://flagcdn.com/w40/de.png',label:'🇩🇪 DE'},
-    {code:'en',flag:'https://flagcdn.com/w40/gb.png',label:'🇬🇧 EN'},
-    {code:'pl',flag:'https://flagcdn.com/w40/pl.png',label:'🇵🇱 PL'},
+    // FR, IT, ES, NL, CS, UK, NO, SV, DA, HU, RO – nur Berichtssprache TXT/PDF
+    // DE/EN/PL haben eigene Seiten – siehe Navbar-Links oben
     {code:'fr',flag:'https://flagcdn.com/w40/fr.png',label:'🇫🇷 FR'},
     {code:'it',flag:'https://flagcdn.com/w40/it.png',label:'🇮🇹 IT'},
     {code:'es',flag:'https://flagcdn.com/w40/es.png',label:'🇪🇸 ES'},
