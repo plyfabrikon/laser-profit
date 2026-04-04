@@ -842,14 +842,8 @@ function buildNavFlags(){
     const mf=document.getElementById('mainFlags');
     const dd=document.getElementById('langDd');
     mf.innerHTML='';dd.innerHTML='';
-    const top3=LANGUAGES.slice(0,3);
-    top3.forEach(l=>{
-        const b=document.createElement('button');
-        b.className='flag-btn'+(l.code===activeLang?' active-flag':'');
-        b.innerHTML=`<img src="${l.flag}" alt="${l.code.toUpperCase()}" title="${l.label}">`;
-        b.onmousedown=e=>{e.stopPropagation();switchLang(l.code);};
-        mf.appendChild(b);
-    });
+    // Nie pokazujemy flag translatora w navbarze – PL/EN/DE mają własne linki powyżej
+    // Translator dostępny tylko przez przycisk "więcej"
     LANGUAGES.forEach(l=>{
         const b=document.createElement('button');
         b.className='dd-btn'+(l.code===activeLang?' active':'');
@@ -1098,6 +1092,24 @@ document.addEventListener('DOMContentLoaded',async()=>{
     await detectCountry();
     applyLang(activeLang);refreshSyms();calcMat();
 });
+</script>
+<!-- ── COOKIE BANNER ── -->
+<div id="cookieBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:9998;background:var(--card);border-top:2px solid var(--orange);padding:14px 20px;box-shadow:0 -4px 20px rgba(0,0,0,.3);">
+    <div style="max-width:1060px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:12px;justify-content:space-between;">
+        <p style="font-size:.76rem;color:var(--muted);flex:1;min-width:220px;">
+            🍪 Ta strona używa plików cookie do analizy ruchu i poprawy działania. Korzystając ze strony, zgadzasz się na ich użycie.
+            <a href="https://laserprofit.eu/privacy" style="color:var(--orange);text-decoration:none;font-weight:700;"> Polityka prywatności</a>
+        </p>
+        <div style="display:flex;gap:8px;flex-shrink:0;">
+            <button onclick="acceptCookies()" style="background:var(--orange);color:#fff;border:none;padding:8px 20px;border-radius:7px;font-weight:700;cursor:pointer;font-family:var(--font);font-size:.78rem;">Akceptuję</button>
+            <button onclick="rejectCookies()" style="background:var(--card2);color:var(--muted);border:1px solid var(--border);padding:8px 16px;border-radius:7px;font-weight:700;cursor:pointer;font-family:var(--font);font-size:.78rem;">Tylko niezbędne</button>
+        </div>
+    </div>
+</div>
+<script>
+function acceptCookies(){document.getElementById('cookieBanner').style.display='none';localStorage.setItem('cookies','accepted');}
+function rejectCookies(){document.getElementById('cookieBanner').style.display='none';localStorage.setItem('cookies','rejected');}
+if(!localStorage.getItem('cookies')){document.getElementById('cookieBanner').style.display='block';}
 </script>
 </body>
 </html>
