@@ -417,14 +417,55 @@ function applyFilters() {
 }
 
 // Funkcja pomocnicza do porównywarki
-function toggleCompare(id) {
-    if(compareSet.has(id)) compareSet.delete(id);
-    else {
-        if(compareSet.size >= 4) { alert('Max 4 lasery.'); return; }
-        compareSet.add(id);
+// --- DODAJ TO TUTAJ ---
+function openCompare() {
+    const table = document.getElementById('cmpTable');
+    if (compareSet.size === 0) {
+        alert("Wybierz co najmniej jeden laser do porównania!");
+        return;
     }
+    
+    const items = LASERS.filter(l => compareSet.has(l.id));
+    
+    let html = `<tr><th class="row-label">Cecha</th>`;
+    items.forEach(l => {
+        html += `<th>${l.brand} ${l.name} <br> <button class="cmp-remove" onclick="toggleCompare(${l.id});openCompare()">Usuń</button></th>`;
+    });
+    html += `</tr>`;
+
+    const rows = [
+        ['Moc', 'power', ' W'],
+        ['Obszar', 'areaW', 'x', 'areaH', ' mm'],
+        ['Cena', 'priceEur', ' €'],
+        ['Air Assist', 'airAssist'],
+        ['Obudowa', 'enclosed']
+    ];
+
+    rows.forEach(row => {
+        html += `<tr><td class="row-label">${row[0]}</td>`;
+        items.forEach(l => {
+            let val = l[row[1]];
+            if(row[1] === 'areaW') val = `${l.areaW}x${l.areaH}`;
+            if(row[1] === 'enclosed') val = l.enclosed ? 'Tak' : 'Nie';
+            html += `<td>${val}${row[2] || ''}</td>`;
+        });
+        html += `</tr>`;
+    });
+
+    table.innerHTML = html;
+    document.getElementById('popupBg').classList.add('open');
+}
+
+function closeCompare() {
+    document.getElementById('popupBg').classList.remove('open');
+}
+
+function clearCompare() {
+    compareSet.clear();
+    document.getElementById('compareBar').classList.remove('show');
     applyFilters();
 }
+// --- KONIEC DODAWANIA ---
 
 // START
 loadData();
