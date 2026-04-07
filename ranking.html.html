@@ -6,60 +6,67 @@
 <title>Porównywarka Laserów 2026 | LaserProfit.eu</title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0d1b2e;--card:#132237;--card2:#1a2f47;--orange:#ff6b2b;--navy:#1e3a5f;--text:#e8f0fe;--muted:#7a91b0;--border:#1e3352;--font:'Poppins',sans-serif;--green:#34d399}
+:root{--bg:#0d1b2e;--card:#132237;--card2:#1a2f47;--orange:#ff6b2b;--navy:#1e3a5f;--text:#e8f0fe;--muted:#7a91b0;--border:#1e3352;--input-bg:#0a1624;--font:'Poppins',sans-serif;--green:#34d399;--red:#f87171;--blue:#38bdf8;--purple:#a855f7}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13px; line-height: 1.5}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;font-size:13px}
 
-/* NAV & HERO */
+/* NAVIGATION & HERO */
 nav{background:rgba(13,27,46,.97);padding:12px 0;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:300;backdrop-filter:blur(12px)}
-.nav-content{max-width:1200px;margin:0 auto;padding:0 16px;display:flex;align-items:center;justify-content:space-between}
-.logo{font-weight:700;color:var(--orange);text-decoration:none;letter-spacing:1px}
-.hero{padding:30px 16px; text-align:center; max-width: 1200px; margin: 0 auto;}
-.hero h1{font-size: 1.6rem; color: var(--orange); margin-bottom: 8px}
+.nav-content{max-width:1300px;margin:0 auto;padding:0 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.logo{font-weight:700;font-size:.9rem;color:var(--orange);text-decoration:none;letter-spacing:1.5px}
+.hero{max-width:1300px;margin:0 auto;padding:32px 16px 20px;text-align:center}
+.hero h1{font-size:clamp(1.2rem,2.5vw,1.8rem);color:var(--orange);margin-bottom:6px}
+.rate-info{font-size:.68rem;color:var(--muted);margin-top:6px}
+.rate-info span{color:var(--green)}
 
-/* FILTRY */
-.filters{max-width:1200px;margin:0 auto;padding:0 16px 20px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
-.fg{display:flex;flex-direction:column;gap:4px}
-.fg label{font-size:.65rem;color:var(--orange);text-transform:uppercase;font-weight:700}
-.fg select, .fg input{background:var(--card);border:1px solid var(--border);color:var(--text);padding:8px;border-radius:6px;font-family:var(--font)}
+/* BRANDS */
+.brand-header { max-width: 1300px; margin: 0 auto 20px; padding: 0 16px; display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
+.brand-badge { background: var(--card); border: 1px solid var(--border); padding: 8px 20px; border-radius: 10px; font-weight: 700; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; transition: all 0.3s ease; }
+.brand-badge.highlight { border-color: var(--orange); color: var(--orange); background: rgba(255, 107, 43, 0.05); }
 
-/* TABELA BEZ SCROLLA */
-.table-wrap{max-width:1200px;margin:0 auto;padding:0 10px 100px; overflow: hidden;} /* Brak scrolla */
-table{width:100%; border-collapse:collapse; background:var(--card); border-radius:8px; table-layout: fixed;} /* fixed zapobiega rozpychaniu */
-thead tr{background:var(--navy); border-bottom:2px solid var(--orange)}
-th{padding:12px 8px; text-align:left; font-size:.65rem; color:var(--orange); text-transform:uppercase}
-td{padding:12px 8px; border-bottom:1px solid var(--border); vertical-align:middle; overflow: hidden; text-overflow: ellipsis;}
+/* FILTERS */
+.filters{max-width:1300px;margin:0 auto;padding:0 16px 18px;display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end}
+.fg{display:flex;flex-direction:column;gap:3px}
+.fg label{font-size:.6rem;color:var(--orange);text-transform:uppercase;font-weight:700}
+.fg select, .fg input{background:var(--card);border:1px solid var(--border);color:var(--text);padding:6px 9px;border-radius:7px;font-size:.72rem}
 
-/* SZEROKOŚCI KOLUMN */
-th:nth-child(1), td:nth-child(1) { width: 40%; } /* Model */
-th:nth-child(2), td:nth-child(2) { width: 15%; } /* Moc */
-th:nth-child(3), td:nth-child(3) { width: 20%; } /* Cena */
-th:nth-child(4), td:nth-child(4) { width: 25%; } /* Akcja */
+/* TABLE CORE - ZMNIEJSZONA SZEROKOŚĆ */
+.table-wrap{max-width:1300px;margin:0 auto;padding:0 16px 60px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;background:var(--card);border-radius:12px;overflow:hidden;min-width:800px} /* ZMNIEJSZONE Z 1500px */
+thead tr{background:var(--navy);border-bottom:2px solid var(--orange)}
+th{padding:12px 10px;text-align:left;font-size:.65rem;color:var(--orange);text-transform:uppercase;font-weight:700}
+td{padding:12px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
 
-/* MODELE I PRZYCISKI */
-.model-name{font-weight:600; display:block; margin-bottom: 4px}
-.expand-btn{background:var(--card2); border:1px solid var(--orange); color:var(--orange); padding:4px 8px; border-radius:4px; font-size:.6rem; cursor:pointer; font-weight: 600}
-.expand-btn:hover{background:var(--orange); color:white}
+/* MODEL & BUTTONS */
+.model-cell{display:flex;flex-direction:column;gap:2px}
+.model-name{font-weight:700;font-size:.85rem}
+.expand-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:4px 8px;border-radius:5px;font-size:.6rem;cursor:pointer;margin-top:5px;width:fit-content;transition:.2s}
+.expand-btn:hover{border-color:var(--orange);color:var(--orange)}
 
-/* ROZWINIĘTE DETALE */
-.detail-row td { background: #0a1624; padding: 15px; border-top: none; }
-.detail-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-.di { background: var(--card2); padding: 8px; border-radius: 6px; border: 1px solid var(--border); }
-.di-lbl { font-size: .55rem; color: var(--muted); text-transform: uppercase; margin-bottom: 2px; }
-.di-val { font-size: .75rem; font-weight: 600; color: var(--text); }
+/* DETAIL ROW - TO CO BYŁO WIDOCZNE WCZEŚNIEJ */
+.detail-row td{background:rgba(14,30,52,0.8);padding:20px;border-top:none}
+.detail-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));gap:15px}
+.di{background:var(--card2);padding:10px;border-radius:8px;border:1px solid var(--border)}
+.di-lbl{font-size:.55rem;color:var(--orange);text-transform:uppercase;margin-bottom:4px}
+.di-val{font-size:.75rem;font-weight:600}
 
-/* PRZYCISKI AKCJI */
-.btn-aff{display:block; background:var(--orange); color:#fff; text-decoration:none; padding:8px; border-radius:6px; font-size:.7rem; font-weight:700; text-align:center; margin-bottom:5px}
-.btn-add-compare{background:none; border:1px solid var(--border); color:var(--muted); padding:6px; border-radius:6px; font-size:.6rem; cursor:pointer; width:100%}
-.btn-add-compare.added{border-color:var(--green); color:var(--green)}
+/* COMPARE BAR */
+.compare-bar{display:none;align-items:center;gap:10px;background:rgba(255,107,43,.12);border:1px solid var(--orange);padding:6px 14px;border-radius:8px;font-size:.72rem}
+.compare-bar.show{display:flex}
+.btn-compare-show{background:var(--orange);color:#fff;border:none;padding:5px 12px;border-radius:6px;font-size:.7rem;font-weight:700;cursor:pointer}
 
-/* RESPONSYWNOŚĆ MOBILNA */
-@media (max-width: 600px) {
-    th:nth-child(3), td:nth-child(3) { display: none; } /* Ukrywamy obszar na mobile w głównej tabeli */
-    th:nth-child(1), td:nth-child(1) { width: 50%; }
-    th:nth-child(2), td:nth-child(2) { width: 20%; }
-    th:nth-child(4), td:nth-child(4) { width: 30%; }
-}
+/* PRICES & ACTIONS */
+.price-eur{font-weight:700;font-size:.9rem;color:var(--orange)}
+.btn-aff{display:block;background:var(--orange);color:#fff;text-decoration:none;padding:6px 12px;border-radius:6px;font-size:.7rem;font-weight:700;text-align:center;margin-bottom:5px}
+.btn-add-compare{background:none;border:1px solid var(--border);color:var(--muted);padding:4px 8px;border-radius:5px;font-size:.6rem;cursor:pointer;width:100%}
+.btn-add-compare.added{background:var(--orange);color:#fff;border-color:var(--orange)}
+
+/* POPUP */
+.popup-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:1000;align-items:center;justify-content:center;padding:20px}
+.popup-bg.open{display:flex}
+.popup{background:var(--card);border-radius:14px;border:1px solid var(--orange);max-width:900px;width:100%;padding:24px;position:relative}
+.cmp-table{width:100%;border-collapse:collapse}
+.cmp-table td, .cmp-table th{padding:10px;border:1px solid var(--border);text-align:center}
 </style>
 </head>
 <body>
@@ -67,41 +74,52 @@ th:nth-child(4), td:nth-child(4) { width: 25%; } /* Akcja */
 <nav>
   <div class="nav-content">
     <a href="#" class="logo">⚡ LASERPROFIT.EU</a>
-    <div id="compareBar" style="display:none">
-        <button class="expand-btn" onclick="openCompare()">⚖️ Porównaj (<span id="compareCount">0</span>)</button>
+    <div class="compare-bar" id="compareBar">
+      <span id="compareCount">0</span> do porównania
+      <button class="btn-compare-show" onclick="openCompare()">⚖️ Porównaj</button>
+      <button onclick="clearCompare()" style="background:none; border:none; color:var(--muted); cursor:pointer">✕</button>
     </div>
+    <a href="https://laserprofit.eu" style="color:var(--muted); text-decoration:none; font-size:.7rem">← Kalkulator</a>
   </div>
 </nav>
 
 <div class="hero">
-  <h1>🔬 Porównywarka Laserów</h1>
-  <p id="rateInfo" style="font-size: 0.7rem; color: var(--muted)">Ładowanie danych...</p>
+  <h1>🔬 Porównywarka Laserów 2026</h1>
+  <p class="rate-info" id="rateInfo">Ładowanie kursów...</p>
+</div>
+
+<div class="brand-header">
+  <div class="brand-badge">xTool</div><div class="brand-badge">Creality</div><div class="brand-badge highlight">Ortur</div><div class="brand-badge">Atomstack</div><div class="brand-badge">Sculpfun</div>
 </div>
 
 <div class="filters">
-  <div class="fg"><label>🔍 Szukaj</label><input type="text" id="search" oninput="applyFilters()" placeholder="Wpisz model..."></div>
-  <div class="fg"><label>💰 Max Cena</label>
-    <select id="fPrice" onchange="applyFilters()">
-        <option value="">Wszystkie</option>
-        <option value="500">do 500€</option>
-        <option value="1000">do 1000€</option>
-        <option value="2000">do 2000€</option>
-    </select>
-  </div>
+  <div class="fg"><label>🔍 Szukaj</label><input type="text" id="search" oninput="applyFilters()"></div>
+  <div class="fg"><label>⚡ Typ</label><select id="fType" onchange="applyFilters()"><option value="">Wszystkie</option><option value="diode">Diodowy</option><option value="fiber">Fiber</option></select></div>
+  <div class="fg"><label>💰 Max Cena</label><select id="fPrice" onchange="applyFilters()"><option value="">Każda</option><option value="500">do 500€</option><option value="1000">do 1000€</option></select></div>
+  <span class="results-count" id="resCount" style="margin-left:auto; font-size:.7rem; color:var(--muted)"></span>
 </div>
 
 <div class="table-wrap">
   <table>
     <thead>
       <tr>
-        <th>Model</th>
-        <th>Moc</th>
-        <th>Cena</th>
-        <th>Akcja</th>
+        <th>MODEL LASERA</th>
+        <th>MOC</th>
+        <th>OBSZAR</th>
+        <th>CENA (EUR/PLN)</th>
+        <th>AKCJA</th>
       </tr>
     </thead>
     <tbody id="tbody"></tbody>
   </table>
+</div>
+
+<div class="popup-bg" id="popupBg" onclick="if(event.target===this)closeCompare()">
+  <div class="popup">
+    <h2 style="color:var(--orange); margin-bottom:15px">⚖️ Porównanie</h2>
+    <div style="overflow-x:auto"><table id="cmpTable" class="cmp-table"></table></div>
+    <button onclick="closeCompare()" style="margin-top:20px; padding:10px 20px; background:var(--navy); color:white; border:none; border-radius:5px; cursor:pointer">Zamknij</button>
+  </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -109,15 +127,15 @@ th:nth-child(4), td:nth-child(4) { width: 25%; } /* Akcja */
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTPmn9gQumk_QDGRqfBdl1gSPKJ2wP8kRARb5UZc0NdQglJA-Y3e1Wpv96YvcpJkonVNJk9RXKbXboM/pub?output=csv';
 let LASERS = [];
 let rateEUR = 4.30;
-let expandedRows = new Set();
 let compareSet = new Set();
+let expandedRows = new Set();
 
 async function loadData() {
     try {
         const r = await fetch('https://api.exchangerate-api.com/v4/latest/EUR');
         const d = await r.json();
         rateEUR = d.rates.PLN;
-        document.getElementById('rateInfo').innerHTML = `Aktualny kurs: 1 EUR = ${rateEUR.toFixed(2)} PLN`;
+        document.getElementById('rateInfo').innerHTML = `Kurs: 1 EUR = <span>${rateEUR.toFixed(2)} PLN</span>`;
     } catch(e) {}
 
     Papa.parse(SHEET_URL, {
@@ -135,37 +153,52 @@ function toggleDetails(id) {
     applyFilters();
 }
 
+function toggleCompare(id) {
+    if(compareSet.has(id)) compareSet.delete(id);
+    else if(compareSet.size < 4) compareSet.add(id);
+    else alert("Max 4 lasery!");
+    applyFilters();
+}
+
 function applyFilters() {
     const search = document.getElementById('search').value.toLowerCase();
+    const fType = document.getElementById('fType').value;
     const fPrice = parseFloat(document.getElementById('fPrice').value) || Infinity;
 
     const filtered = LASERS.filter(l => {
         const name = (l.brand + ' ' + l.name).toLowerCase();
-        return name.includes(search) && l.priceEur <= fPrice;
+        if(search && !name.includes(search)) return false;
+        if(fType && l.type !== fType) return false;
+        if(l.priceEur > fPrice) return false;
+        return true;
     });
 
     const tbody = document.getElementById('tbody');
     tbody.innerHTML = filtered.map(l => {
+        const inCmp = compareSet.has(l.id);
         const isExp = expandedRows.has(l.id);
         const pln = Math.round(l.priceEur * rateEUR).toLocaleString();
 
         let row = `
-        <tr>
+        <tr class="${inCmp ? 'in-compare' : ''}">
             <td>
-                <span class="model-name">${l.brand} ${l.name}</span>
-                <button class="expand-btn" onclick="toggleDetails(${l.id})">
-                    ${isExp ? '▲ Ukryj' : '▼ Parametry'}
-                </button>
+                <div class="model-cell">
+                    <span class="model-name">${l.brand} ${l.name}</span>
+                    <button class="expand-btn" onclick="toggleDetails(${l.id})">
+                        ${isExp ? '▲ Ukryj' : '▼ Parametry'}
+                    </button>
+                </div>
             </td>
-            <td style="font-weight:700; color:var(--orange)">${l.power}W</td>
+            <td class="power-cell" style="color:var(--orange); font-weight:700">${l.power}W</td>
+            <td>${l.areaW}x${l.areaH} mm</td>
             <td>
-                <span style="font-weight:700">${l.priceEur}€</span><br>
-                <small style="color:var(--muted)">${pln} zł</small>
+                <span class="price-eur">${l.priceEur}€</span><br>
+                <small style="color:var(--muted)">≈ ${pln} zł</small>
             </td>
             <td>
-                <a href="${l.affLink}" target="_blank" class="btn-aff">KUP</a>
-                <button class="btn-add-compare ${compareSet.has(l.id) ? 'added' : ''}" onclick="toggleCompare(${l.id})">
-                    ${compareSet.has(l.id) ? '✓' : '⊕'}
+                <a href="${l.affLink}" target="_blank" class="btn-aff">KUP TERAZ</a>
+                <button class="btn-add-compare ${inCmp ? 'added' : ''}" onclick="toggleCompare(${l.id})">
+                    ${inCmp ? '✓ W liście' : '⊕ Porównaj'}
                 </button>
             </td>
         </tr>`;
@@ -173,27 +206,41 @@ function applyFilters() {
         if(isExp) {
             row += `
             <tr class="detail-row">
-                <td colspan="4">
+                <td colspan="5">
                     <div class="detail-grid">
-                        <div class="di"><div class="di-lbl">Obszar roboczy</div><div class="di-val">${l.areaW}x${l.areaH} mm</div></div>
                         <div class="di"><div class="di-lbl">Grubość cięcia</div><div class="di-val">${l.cutDepth || '-'} mm</div></div>
-                        <div class="di"><div class="di-lbl">Air Assist</div><div class="di-val">${l.airAssist === 'builtin' ? 'Tak' : 'Nie'}</div></div>
-                        <div class="di"><div class="di-lbl">Gwarancja</div><div class="di-val">${l.warranty || '12'} m-cy</div></div>
+                        <div class="di"><div class="di-lbl">Air Assist</div><div class="di-val">${l.airAssist === 'builtin' ? '✅ Tak' : '❌ Nie'}</div></div>
+                        <div class="di"><div class="di-lbl">Obudowa</div><div class="di-val">${l.enclosed ? '🔒 Tak' : 'Nie'}</div></div>
+                        <div class="di"><div class="di-lbl">Wysyłka</div><div class="di-val">${l.shipFrom || 'CN'}</div></div>
+                        <div class="di"><div class="di-lbl">Połączenie</div><div class="di-val">${l.conn || 'USB'}</div></div>
                     </div>
                 </td>
             </tr>`;
         }
         return row;
     }).join('');
+
+    const bar = document.getElementById('compareBar');
+    bar.classList.toggle('show', compareSet.size > 0);
+    document.getElementById('compareCount').textContent = compareSet.size;
+    document.getElementById('resCount').textContent = `Wyniki: ${filtered.length}`;
 }
 
-function toggleCompare(id) {
-    if(compareSet.has(id)) compareSet.delete(id);
-    else compareSet.add(id);
-    document.getElementById('compareBar').style.display = compareSet.size > 0 ? 'block' : 'none';
-    document.getElementById('compareCount').textContent = compareSet.size;
-    applyFilters();
+function openCompare() {
+    const items = LASERS.filter(l => compareSet.has(l.id));
+    let html = `<tr><th>Cecha</th>` + items.map(l => `<th>${l.name}</th>`).join('') + `</tr>`;
+    
+    const fields = [['Moc', 'power'], ['Obszar', 'areaW'], ['Cena', 'priceEur']];
+    fields.forEach(f => {
+        html += `<tr><td>${f[0]}</td>` + items.map(l => `<td>${l[f[1]]}</td>`).join('') + `</tr>`;
+    });
+
+    document.getElementById('cmpTable').innerHTML = html;
+    document.getElementById('popupBg').classList.add('open');
 }
+
+function closeCompare() { document.getElementById('popupBg').classList.remove('open'); }
+function clearCompare() { compareSet.clear(); applyFilters(); }
 
 loadData();
 </script>
