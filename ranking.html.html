@@ -239,19 +239,21 @@ tbody tr.in-compare td{background:rgba(255,107,43,.05);border-left:3px solid var
 
 <div class="table-wrap">
 <table id="laserTable">
-<thead><tr>
-  <th onclick="sortCol('name')">Model <span class="si">⇅</span></th>
-  <th onclick="sortCol('power')">Moc lasera <span class="si">⇅</span></th>
-  <th onclick="sortCol('area')">Obszar roboczy <span class="si">⇅</span></th>
-  <th>Gr. cięcia</th>
-  <th>Materiały</th>
-  <th>Połączenie</th>
-  <th>Air Assist</th>
-  <th>Obudowa</th>
-  <th>Wysyłka / Gwarancja</th>
-  <th onclick="sortCol('price')">Cena <span class="si">⇅</span></th>
-  <th>Akcje</th>
-</tr></thead>
+<thead>
+  <tr>
+    <th>MODEL</th>
+    <th>MOC LASERA</th>
+    <th>OBSZAR ROBOCZY</th>
+    <th>GR. CIĘCIA</th>
+    <th>MATERIAŁY</th>
+    <th>POŁĄCZENIE</th>
+    <th>AIR ASSIST</th>
+    <th>OBUDOWA</th>
+    <th>WYSYŁKA / GWA</th>
+    <th>CENA</th>
+    <th>AKCJA</th>
+  </tr>
+</thead>
 <tbody id="tbody"></tbody>
 </table>
 <div class="no-results" id="noResults" style="display:none">Brak laserów spełniających kryteria.</div>
@@ -330,56 +332,7 @@ async function fetchRates() {
 function pln(eur) { return Math.round(eur * rateEUR).toLocaleString('pl-PL'); }
 
 // 3. RENDEROWANIE WIERSZA (Widok Polski)
-function renderRow(l) {
-    const inCmp = compareSet.has(l.id);
-    const isOrtur = (l.brand && l.brand.toLowerCase() === 'ortur');
-    const finalLink = isOrtur ? 'https://ortur.net/?ref=nskubuaw' : l.affLink;
-
-    return `
-    <tr class="laser-row ${inCmp ? 'in-compare' : ''}" data-id="${l.id}">
-        <td>
-            <div class="model-cell">
-                <span class="model-name">${l.brand} ${l.name}</span>
-                <span class="cat-badge ${l.type === 'fiber' ? 'cat-fiber' : 'cat-diode'}">
-                    ${l.type === 'fiber' ? 'FIBER' : 'DIODOWY'}
-                </span>
-            </div>
-        </td>
-        <td class="power-cell">${l.power} W</td>
-        <td class="area-cell">
-            ${l.areaW}×${l.areaH} mm<br>
-            ${l.expandable ? `<span class="area-exp yes">⚡ ${l.expandNote}</span>` : '<span class="cross">✗ Nie</span>'}
-        </td>
-        <td style="font-size:.7rem">${l.cutDepth || '-'}</td>
-        <td>
-            <div class="mat-chips">
-                <span class="mat-chip ${l.wood ? 'mc-yes' : 'mc-no'}">Drewno</span>
-                <span class="mat-chip ${l.leather ? 'mc-yes' : 'mc-no'}">Skóra</span>
-            </div>
-        </td>
-        <td>
-            <div class="price-cell">
-                <span class="price-eur">${l.priceEur} €</span><br>
-                <span class="price-pln">≈ ${pln(l.priceEur)} zł</span><br>
-                ${l.shipEU ? '<span class="ship-eu">🇪🇺 Magazyn EU</span>' : '<span style="color:var(--muted);font-size:.6rem">📦 Wysyłka z CN</span>'}
-            </div>
-        </td>
-        <td>
-            <div class="action-cell">
-                <a href="${finalLink}" target="_blank" class="btn-aff">KUP TERAZ</a>
-                ${isOrtur ? `
-                    <div style="margin-top:6px; padding:4px; border:1px dashed #ff6b2b; border-radius:4px; background:rgba(255,107,43,0.05); text-align:center;">
-                        <div style="font-size:9px; color:#7a91b0;">KOD:</div>
-                        <div style="font-size:12px; color:#ff6b2b; font-weight:700;">${MY_PROMO_CODE}</div>
-                    </div>
-                ` : ''}
-                <button class="btn-add-compare ${inCmp ? 'added' : ''}" onclick="toggleCompare(${l.id})">
-                    ${inCmp ? '✔ W porównaniu' : '⊕ Porównaj'}
-                </button>
-            </div>
-        </td>
-    </tr>`;
-}
+function renderRow
 
 // 4. FILTROWANIE I SORTOWANIE (Z Twojego kodu)
 function applyFilters() {
