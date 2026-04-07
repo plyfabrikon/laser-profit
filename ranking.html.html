@@ -332,9 +332,69 @@ async function fetchRates() {
 function pln(eur) { return Math.round(eur * rateEUR).toLocaleString('pl-PL'); }
 
 // 3. RENDEROWANIE WIERSZA (Widok Polski)
-function renderRow
+function renderRow(l) {
+    const inCmp = compareSet.has(l.id);
+    const isOrtur = (l.brand && l.brand.toLowerCase() === 'ortur');
+    const finalLink = isOrtur ? 'https://ortur.net/?ref=nskubuaw' : l.affLink;
 
-// 4. FILTROWANIE I SORTOWANIE (Z Twojego kodu)
+    // Ikony połączenia
+    const connIcons = l.conn && l.conn.length > 0 
+        ? l.conn.map(c => `<span class="conn-chip on">${c}</span>`).join(' ') 
+        : '<span class="na-lbl">-</span>';
+
+    return `
+    <tr class="laser-row ${inCmp ? 'in-compare' : ''}" data-id="${l.id}">
+        <td>
+            <div class="model-cell">
+                <span class="model-name">${l.brand} ${l.name}</span>
+                <span class="cat-badge ${l.type === 'fiber' ? 'cat-fiber' : 'cat-diode'}">
+                    ${l.type === 'fiber' ? 'FIBER' : 'DIODOWY'}
+                </span>
+            </div>
+        </td>
+        <td class="power-cell">${l.power} W</td>
+        <td class="area-cell">
+            ${l.areaW}×${l.areaH} mm<br>
+            ${l.expandable ? `<span class="area-exp yes">⚡ Można powiększyć</span>` : '<span class="cross">❌</span>'}
+        </td>
+        <td style="font-size:.7rem; font-weight:600">${l.cutDepth || '-'} mm</td>
+        <td>
+            <div class="mat-chips">
+                <span class="mat-chip ${l.wood ? 'mc-yes' : 'mc-no'}">Drewno</span>
+                <span class="mat-chip ${l.leather ? 'mc-yes' : 'mc-no'}">Skóra</span>
+            </div>
+        </td>
+        <td><div class="conn-chips">${connIcons}</div></td>
+        <td>
+            ${l.airAssist === 'builtin' ? '<span class="check">✅ Tak</span>' : (l.airAssist === 'option' ? '<span class="opt-lbl">◎ Opcja</span>' : '<span class="cross">❌</span>')}
+        </td>
+        <td>
+            ${l.enclosed ? '🔒 Tak' : '<span class="na-lbl">Otwarta</span>'}
+        </td>
+        <td>
+            <div class="ship-cell">
+                <span class="ship-from">📍 ${l.shipFrom || 'CN'}</span><br>
+                <span class="warranty">🛡️ ${l.warranty || '12'} m-cy</span>
+            </div>
+        </td>
+        <td>
+            <div class="price-cell">
+                <span class="price-eur">${l.priceEur} €</span><br>
+                <span class="price-pln">≈ ${pln(l.priceEur)} zł</span><br>
+                ${l.shipEU ? '<span class="ship-eu">🇪🇺 Magazyn EU</span>' : ''}
+            </div>
+        </td>
+        <td>
+            <div class="action-cell">
+                <a href="${finalLink}" target="_blank" class="btn-aff">KUP TERAZ</a>
+                ${isOrtur ? `<div style="font-size:10px; color:var(--orange); font-weight:700; text-align:center; border:1px dashed var(--orange); border-radius:4px; padding:2px;">KOD: ${MY_PROMO_CODE}</div>` : ''}
+                <button class="btn-add-compare ${inCmp ? 'added' : ''}" onclick="toggleCompare(${l.id})">
+                    ${inCmp ? '✔ W liście' : '⊕ Porównaj'}
+                </button>
+            </div>
+        </td>
+    </tr>`;
+}
 function applyFilters() {
     const search = document.getElementById('search').value.toLowerCase();
     const fType = document.getElementById('fType').value;
