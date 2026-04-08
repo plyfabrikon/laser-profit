@@ -428,22 +428,69 @@ function applyFilters() {
     const search = document.getElementById('search').value.toLowerCase();
     const fType = document.getElementById('fType').value;
     const fPrice = parseFloat(document.getElementById('fPrice').value) || Infinity;
+    const fPower = parseFloat(document.getElementById('fPower').value) || 0;
+    const fMat = document.getElementById('fMat').value;
+    const fEU = document.getElementById('fEU').value;
+    const fExp = document.getElementById('fExp').value;
+    const fSort = document.getElementById('fSort').value;
 
     let data = LASERS.filter(l => {
+        // Szukaj (Brand + Model)
         if(search && !(l.brand + ' ' + l.name).toLowerCase().includes(search)) return false;
+        
+        // Typ (Dioda/Fiber)
         if(fType && l.type !== fType) return false;
+        
+        // Cena Maksymalna
         if(l.priceEur > fPrice) return false;
+        
+        // Moc Minimalna
+        if(fPower && parseFloat(l.power) < fPower) return false;
+        
+        // Materiały
+        if(fMat === 'wood' && !l.wood) return false;
+        if(fMat === 'leather' && !l.leather) return false;
+        // Uwaga: dla 'acrylic_all' i 'metal_all' upewnij się, że masz te kolumny w Arkuszu
+        
+        // Wysyłka z EU
+        if(fEU === 'yes' && !l.shipEU) return false;
+        
+        // Rozszerzalność (Expandable)
+        if(fExp === 'yes' && !l.expandable) return false;
+
         return true;
     });
 
+    // --- SORTOWANIE ---
+    data.sort((a, b) => {
+        if(fSort === 'price_asc') return a.priceEur - b.priceEur;
+        if(fSort === 'price_desc') return b.priceEur - a.priceEur;
+        if(fSort === 'power_desc') return parseFloat(b.power) - parseFloat(a.power);
+        if(fSort === 'power_asc') return parseFloat(a.power) - parseFloat(b.power);
+        if(fSort === 'area_desc') return (b.areaW * b.areaH) - (a.areaW * a.areaH);
+        if(fSort === 'speed_desc') return (parseInt(b.speed) || 0) - (parseInt(a.speed) || 0);
+        return 0;
+    });
+
+    // Renderowanie wyników
     const tbody = document.getElementById('tbody');
     if(tbody) {
         tbody.innerHTML = data.map(renderRow).join('');
     }
     
+    // Licznik wyników
     const resCount = document.getElementById('resCount');
+    const noResults = document.getElementById('noResults');
+    
     if(resCount) resCount.textContent = `Znaleziono: ${data.length} laserów`;
-	// Zarządzanie paskiem porównywania
+    
+    if(data.length === 0) {
+        noResults.style.display = 'block';
+    } else {
+        noResults.style.display = 'none';
+    }
+
+    // Zarządzanie paskiem porównywania
     const bar = document.getElementById('compareBar');
     const count = document.getElementById('compareCount');
     if (compareSet.size > 0) {
