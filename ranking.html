@@ -404,16 +404,12 @@ function renderRow(l) {
     const detailsId = `details-${l.id}`;
 
     // Konwersja wartości materiałów na czytelne etykiety
-    const cutChips = (l.cutMats||[]).map(m =>
-        `<span class="mat-chip mc-cut">${m}</span>`
-    ).join('');
-    const engChips = (l.engMats||[]).map(m =>
-        `<span class="mat-chip mc-eng">${m}</span>`
-    ).join('');
-    const matHtml = `
-        ${cutChips ? `<span class="mat-section-label">✂ cięcie</span><div class="mat-chips">${cutChips}</div>` : ''}
-        ${engChips ? `<span class="mat-section-label">✦ grawerowanie</span><div class="mat-chips">${engChips}</div>` : ''}
-    `;
+    const cutText = (l.cutMats||[]).join(' · ');
+    const engText = (l.engMats||[]).join(' · ');
+    const matHtml = `<div style="font-size:.62rem;line-height:1.7">
+        ${cutText ? `<div><span style="color:var(--green);font-weight:700">✂</span> <span style="color:var(--green)">${cutText}</span></div>` : ''}
+        ${engText ? `<div><span style="color:var(--blue);font-weight:700">✦</span> <span style="color:var(--blue)">${engText}</span></div>` : ''}
+    </div>`;
 
     return `
     <tr class="laser-row ${inCmp ? 'in-compare' : ''}" data-id="${l.id}">
