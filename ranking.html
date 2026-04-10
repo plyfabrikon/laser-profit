@@ -75,8 +75,8 @@ nav{background:rgba(13,27,46,.97);padding:12px 0;border-bottom:1px solid var(--b
 .results-count{font-size:.7rem;color:var(--muted);margin-left:auto;align-self:center}
 
 /* TABLE */
-.table-wrap{max-width:1300px;margin:0 auto;padding:0 16px 60px;overflow-x:auto}
-table{width:100%;border-collapse:collapse;background:var(--card);border-radius:12px;overflow:hidden;min-width:1500px}
+.table-wrap{max-width:1300px;margin:0 auto;padding:0 16px 60px}
+table{width:100%;border-collapse:collapse;background:var(--card);border-radius:12px;overflow:hidden}
 thead tr{background:var(--navy);border-bottom:2px solid var(--orange)}
 th{padding:10px 8px;text-align:left;font-size:.58rem;color:var(--orange);text-transform:uppercase;letter-spacing:.6px;font-weight:700;cursor:pointer;white-space:nowrap;user-select:none}
 th:hover{color:#fff}
@@ -242,15 +242,12 @@ tbody tr.in-compare td{background:rgba(255,107,43,.05);border-left:3px solid var
 <thead>
   <tr>
     <th>MODEL</th>
-    <th>MOC LASERA</th>
-    <th>OBSZAR ROBOCZY</th>
-    <th>BUDOWA</th> <th>OPTYKA</th> <th>GR. CIĘCIA</th>
+    <th>MOC</th>
+    <th>OBSZAR</th>
     <th>MATERIAŁY</th>
     <th>POŁĄCZENIE</th>
     <th>AIR ASSIST</th>
-    <th>OBUDOWA</th>
     <th>WYSYŁKA / GWA</th>
-    <th>CENA</th>
     <th>AKCJA</th>
   </tr>
 </thead>
@@ -341,11 +338,25 @@ function pln(eur) { return Math.round(eur * rateEUR).toLocaleString('pl-PL'); }
 function renderRow(l) {
     const inCmp = compareSet.has(l.id);
     const isOrtur = (l.brand && l.brand.toLowerCase() === 'ortur');
+    const hasAffLink = !!(l.affLink && l.affLink.trim() && l.affLink.trim() !== '-');
     const finalLink = isOrtur ? 'https://ortur.net/?ref=nskubuaw' : l.affLink;
+    const showBuy = isOrtur || hasAffLink; // Pokaż cenę i KUP TERAZ tylko gdy jest link afiliacyjny
 
     const connIcons = l.conn && l.conn.length > 0 
         ? l.conn.map(c => `<span class="conn-chip on">${c}</span>`).join(' ') 
         : '<span class="na-lbl">-</span>';
+
+    const detailsId = `details-${l.id}`;
+
+    const priceAndBuyHtml = showBuy ? `
+        <div class="price-cell" style="margin-bottom:4px">
+            <span class="price-eur">${l.priceEur} €</span>
+            <span class="price-pln"> ≈ ${pln(l.priceEur)} zł</span>
+            ${l.shipEU ? '<br><span class="ship-eu">📦 Magazyn EU</span>' : ''}
+        </div>
+        <a href="${finalLink}" target="_blank" class="btn-aff">KUP TERAZ</a>
+        ${isOrtur ? `<div style="font-size:10px; color:var(--orange); font-weight:700; text-align:center; border:1px dashed var(--orange); border-radius:4px; padding:2px; margin-top:3px;">KOD: ${MY_PROMO_CODE}</div>` : ''}
+    ` : '';
 
     return `
     <tr class="laser-row ${inCmp ? 'in-compare' : ''}" data-id="${l.id}">
@@ -355,6 +366,7 @@ function renderRow(l) {
                 <span class="cat-badge ${l.type === 'fiber' ? 'cat-fiber' : 'cat-diode'}">
                     ${l.type === 'fiber' ? 'FIBER' : 'DIODOWY'}
                 </span>
+                <button class="expand-btn" onclick="toggleDetails('${detailsId}', this)">▼ Szczegóły</button>
             </div>
         </td>
 
@@ -362,24 +374,8 @@ function renderRow(l) {
 
         <td class="area-cell">
             ${l.areaW}×${l.areaH} mm<br>
-            ${l.expandable ? `<span class="area-exp yes">⚡ Można powiększyć</span>` : '<span class="cross">❌</span>'}
+            ${l.expandable ? `<span class="area-exp yes">⚡ Można powiększyć</span>` : ''}
         </td>
-
-        <td>
-            <div style="font-size: 0.65rem;">
-                ${l.linearRails ? '✅ Szyny liniowe' : '⚪ Rolki V-Slot'}<br>
-                ${l.camera ? '📷 Kamera' : '⚪ Brak kamery'}
-            </div>
-        </td>
-
-        <td>
-            <div style="font-size: 0.65rem;">
-                🎯 Plamka: <strong>${l.spotSize}</strong><br>
-                🌈 Fala: <strong>${l.wavelength}</strong>
-            </div>
-        </td>
-
-        <td style="font-size:.7rem; font-weight:600">${l.cutDepth || '-'} mm</td>
 
         <td>
             <div class="mat-chips">
@@ -395,10 +391,6 @@ function renderRow(l) {
         </td>
 
         <td>
-            ${l.enclosed ? '🔒 Tak' : '<span class="na-lbl">Otwarta</span>'}
-        </td>
-
-        <td>
             <div class="ship-cell">
                 <span class="ship-from">📍 ${l.shipFrom || 'CN'}</span><br>
                 <span class="warranty">🛡️ ${l.warranty || '12'} m-cy</span>
@@ -406,24 +398,37 @@ function renderRow(l) {
         </td>
 
         <td>
-            <div class="price-cell">
-                <span class="price-eur">${l.priceEur} €</span><br>
-                <span class="price-pln">≈ ${pln(l.priceEur)} zł</span><br>
-                ${l.shipEU ? '<span class="ship-eu"> Magazyn EU</span>' : ''}
-            </div>
-        </td>
-
-        <td>
             <div class="action-cell">
-                <a href="${finalLink}" target="_blank" class="btn-aff">KUP TERAZ</a>
-                ${isOrtur ? `<div style="font-size:10px; color:var(--orange); font-weight:700; text-align:center; border:1px dashed var(--orange); border-radius:4px; padding:2px;">KOD: ${MY_PROMO_CODE}</div>` : ''}
+                ${priceAndBuyHtml}
                 <button class="btn-add-compare ${inCmp ? 'added' : ''}" onclick="toggleCompare(${l.id})">
                     ${inCmp ? '✔ W liście' : '⊕ Porównaj'}
                 </button>
             </div>
         </td>
+    </tr>
+    <tr class="detail-row" id="${detailsId}" style="display:none">
+        <td colspan="8">
+            <div class="detail-grid">
+                <div class="di"><div class="di-lbl">Budowa</div><div class="di-val">${l.linearRails ? '✅ Szyny liniowe' : '⚪ Rolki V-Slot'}</div></div>
+                <div class="di"><div class="di-lbl">Kamera</div><div class="di-val">${l.camera ? '📷 Tak' : '❌ Brak'}</div></div>
+                <div class="di"><div class="di-lbl">Rozmiar plamki</div><div class="di-val">${l.spotSize || '-'}</div></div>
+                <div class="di"><div class="di-lbl">Długość fali</div><div class="di-val">${l.wavelength || '-'}</div></div>
+                <div class="di"><div class="di-lbl">Grubość cięcia</div><div class="di-val">${l.cutDepth || '-'} mm</div></div>
+                <div class="di"><div class="di-lbl">Obudowa</div><div class="di-val">${l.enclosed ? '🔒 Zamknięta' : 'Otwarta'}</div></div>
+                <div class="di"><div class="di-lbl">Max prędkość</div><div class="di-val">${l.speed ? l.speed + ' mm/min' : '-'}</div></div>
+                ${!showBuy ? `<div class="di"><div class="di-lbl">Cena</div><div class="di-val" style="color:var(--orange)">${l.priceEur} € <span style="color:var(--muted);font-size:.65rem">≈ ${pln(l.priceEur)} zł</span></div></div>` : ''}
+            </div>
+        </td>
     </tr>`;
 }
+function toggleDetails(id, btn) {
+    const row = document.getElementById(id);
+    if (!row) return;
+    const isOpen = row.style.display !== 'none';
+    row.style.display = isOpen ? 'none' : 'table-row';
+    btn.textContent = isOpen ? '▼ Szczegóły' : '▲ Ukryj';
+}
+
 function applyFilters() {
     const search = document.getElementById('search').value.toLowerCase();
     const fType = document.getElementById('fType').value;
