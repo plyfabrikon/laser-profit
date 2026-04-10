@@ -48,7 +48,7 @@
 }
 :root{--bg:#0d1b2e;--card:#132237;--card2:#1a2f47;--orange:#ff6b2b;--navy:#1e3a5f;--text:#e8f0fe;--muted:#7a91b0;--border:#1e3352;--input-bg:#0a1624;--font:'Poppins',sans-serif;--green:#34d399;--red:#f87171;--blue:#38bdf8;--purple:#a855f7}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;font-size:13px}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;font-size:13px;overflow-x:hidden}
 nav{background:rgba(13,27,46,.97);padding:12px 0;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:300;backdrop-filter:blur(12px)}
 .nav-content{max-width:1300px;margin:0 auto;padding:0 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .logo{font-weight:700;font-size:.9rem;color:var(--orange);text-decoration:none;letter-spacing:1.5px;white-space:nowrap}
@@ -75,8 +75,8 @@ nav{background:rgba(13,27,46,.97);padding:12px 0;border-bottom:1px solid var(--b
 .results-count{font-size:.7rem;color:var(--muted);margin-left:auto;align-self:center}
 
 /* TABLE */
-.table-wrap{max-width:1300px;margin:0 auto;padding:0 16px 60px}
-table{width:100%;border-collapse:collapse;background:var(--card);border-radius:12px;overflow:hidden;table-layout:fixed}
+.table-wrap{max-width:1300px;margin:0 auto;padding:0 16px 60px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;min-width:900px;border-collapse:collapse;background:var(--card);border-radius:12px;overflow:hidden;table-layout:fixed}
 thead tr{background:var(--navy);border-bottom:2px solid var(--orange)}
 th{padding:5px 4px;text-align:left;font-size:.58rem;color:var(--orange);text-transform:uppercase;letter-spacing:.6px;font-weight:700;cursor:pointer;white-space:nowrap;user-select:none}
 th:hover{color:#fff}
@@ -240,28 +240,28 @@ tbody tr.in-compare td{background:rgba(255,107,43,.05);border-left:3px solid var
 <div class="table-wrap">
 <table id="laserTable">
 <colgroup>
-  <col style="width:16%">
-  <col style="width:6%">
-  <col style="width:9%">
-  <col style="width:8%">
-  <col style="width:9%">
-  <col style="width:8%">
-  <col style="width:9%">
-  <col style="width:9%">
-  <col style="width:10%">
-  <col style="width:16%">
+  <col style="width:10%">  <!-- Marka -->
+  <col style="width:12%">  <!-- Nazwa -->
+  <col style="width:7%">   <!-- Typ -->
+  <col style="width:6%">   <!-- Moc -->
+  <col style="width:10%">  <!-- Pole cięcia -->
+  <col style="width:8%">   <!-- Prędkość -->
+  <col style="width:12%">  <!-- Cięcie/Materiały -->
+  <col style="width:10%">  <!-- Połączenie -->
+  <col style="width:9%">   <!-- Wysyłka -->
+  <col style="width:16%">  <!-- Akcja -->
 </colgroup>
 <thead>
   <tr>
-    <th>MODEL</th>
+    <th>MARKA</th>
+    <th>NAZWA</th>
+    <th>TYP</th>
     <th>MOC</th>
-    <th>OBSZAR</th>
-    <th>OBUDOWA</th>
-    <th>BUDOWA</th>
-    <th>AIR ASSIST</th>
-    <th>PLAMKA</th>
+    <th>POLE CIĘCIA</th>
+    <th>PRĘDKOŚĆ</th>
+    <th>CIĘCIE / MATERIAŁY</th>
     <th>POŁĄCZENIE</th>
-    <th>WYSYŁKA / GWA</th>
+    <th>WYSYŁKA</th>
     <th>AKCJA</th>
   </tr>
 </thead>
@@ -396,43 +396,35 @@ function renderRow(l) {
 
     const detailsId = `details-${l.id}`;
 
+    const matHtml = [
+        l.wood    ? '<span class="mat-chip mc-yes">Drewno</span>'                                                              : '<span class="mat-chip mc-no">Drewno</span>',
+        l.metal   && l.metal   !== '-' && l.metal   !== 'none' ? `<span class="mat-chip mc-partial">${l.metal}</span>`        : '<span class="mat-chip mc-no">Metal</span>',
+        l.leather ? '<span class="mat-chip mc-yes">Skóra</span>'                                                               : '<span class="mat-chip mc-no">Skóra</span>',
+        l.acrylic && l.acrylic !== '-' && l.acrylic !== 'none' ? `<span class="mat-chip mc-partial">${l.acrylic}</span>`      : '<span class="mat-chip mc-no">Plexa</span>',
+    ].join('');
+
     return `
     <tr class="laser-row ${inCmp ? 'in-compare' : ''}" data-id="${l.id}">
+        <td style="font-weight:700;font-size:.72rem">${l.brand}</td>
         <td>
-            <div class="model-cell">
-                <span class="model-name">${l.brand} ${l.name}</span>
-                <span class="cat-badge ${l.type === 'fiber' ? 'cat-fiber' : 'cat-diode'}">
-                    ${l.type === 'fiber' ? 'FIBER' : 'DIODOWY'}
-                </span>
-                <button class="expand-btn" onclick="toggleDetails('${detailsId}', this)">▼ Szczegóły</button>
-            </div>
+            <div style="font-weight:700;font-size:.72rem;line-height:1.2">${l.name}</div>
+            <button class="expand-btn" onclick="toggleDetails('${detailsId}', this)" style="margin-top:3px">▼ Więcej</button>
         </td>
-        <td class="power-cell">${l.power} W</td>
-        <td class="area-cell">
-            ${l.areaW}×${l.areaH} mm<br>
-            ${l.expandable ? '<span class="area-exp yes">⚡ Powiększ.</span>' : ''}
-        </td>
-        <td style="font-size:.68rem">
-            ${l.enclosed ? '🔒 Zamknięta' : '<span class="na-lbl">Otwarta</span>'}
-        </td>
-        <td style="font-size:.65rem">
-            ${l.linearRails ? '✅ Szyny' : '⚪ Rolki'}
-        </td>
+        <td><span class="cat-badge ${l.type === 'fiber' ? 'cat-fiber' : 'cat-diode'}">${l.type === 'fiber' ? 'FIBER' : 'DIOD.'}</span></td>
+        <td class="power-cell">${l.power}W</td>
+        <td style="font-size:.68rem">${l.areaW}×${l.areaH} mm${l.expandable ? '<br><span class="area-exp yes" style="font-size:.58rem">⚡ Powiększ.</span>' : ''}</td>
+        <td style="font-size:.68rem">${l.speed || '-'} <span style="font-size:.55rem;color:var(--muted)">mm/min</span></td>
         <td>
-            ${l.airAssist === 'builtin' ? '<span class="check">✅ Tak</span>' : (l.airAssist === 'option' ? '<span class="opt-lbl">◎ Opcja</span>' : '<span class="cross">❌</span>')}
+            <div style="font-size:.6rem;margin-bottom:2px">${l.cutDepth || '-'}</div>
+            <div class="mat-chips">${matHtml}</div>
         </td>
-        <td style="font-size:.68rem">${l.spotSize || '-'}</td>
         <td><div class="conn-chips">${connIcons}</div></td>
-        <td>
-            <div class="ship-cell">
-                <span class="ship-from">📍 ${l.shipFrom || 'CN'}</span><br>
-                <span class="warranty">🛡️ ${l.warranty || '12'} m-cy</span>
-            </div>
-        </td>
+        <td style="font-size:.68rem">📍 ${l.shipFrom || 'CN'}</td>
         <td>
             <div class="action-cell">
+                ${showBuy ? `<a href="${finalLink}" target="_blank" class="btn-aff" style="font-size:.6rem;padding:3px 8px">KUP TERAZ</a>${isOrtur ? `<div style="font-size:.55rem;color:var(--orange);text-align:center;border:1px dashed var(--orange);border-radius:3px;padding:1px">KOD: LASERPROFIT</div>` : ''}` : ''}
                 <button class="btn-add-compare ${inCmp ? 'added' : ''}" onclick="toggleCompare(${l.id})">
-                    ${inCmp ? '✔ W liście' : '⊕ Porównaj'}
+                    ${inCmp ? '✔ Lista' : '⊕ Porównaj'}
                 </button>
             </div>
         </td>
@@ -440,15 +432,13 @@ function renderRow(l) {
     <tr class="detail-row" id="${detailsId}" style="display:none">
         <td colspan="10">
             <div class="detail-grid">
-                <div class="di"><div class="di-lbl">Kamera</div><div class="di-val">${l.camera ? '📷 Tak' : '❌ Brak'}</div></div>
+                <div class="di"><div class="di-lbl">Obudowa</div><div class="di-val">${l.enclosed ? '🔒 Zamknięta' : 'Otwarta'}</div></div>
+                <div class="di"><div class="di-lbl">Wielkość plamki</div><div class="di-val">${l.spotSize || '-'}</div></div>
                 <div class="di"><div class="di-lbl">Długość fali</div><div class="di-val">${l.wavelength || '-'}</div></div>
-                <div class="di"><div class="di-lbl">Grubość cięcia</div><div class="di-val">${l.cutDepth || '-'}</div></div>
-                <div class="di"><div class="di-lbl">Max prędkość</div><div class="di-val">${l.speed ? l.speed + ' mm/min' : '-'}</div></div>
-                <div class="di"><div class="di-lbl">Materiały</div><div class="di-val">${l.wood ? '✅ Drewno ' : ''}${l.leather ? '✅ Skóra' : ''}</div></div>
-                <div class="di"><div class="di-lbl">Akryl</div><div class="di-val">${l.acrylic || '-'}</div></div>
-                <div class="di"><div class="di-lbl">Metal</div><div class="di-val">${l.metal || '-'}</div></div>
+                <div class="di"><div class="di-lbl">Prowadnice</div><div class="di-val">${l.linearRails ? '✅ Szyny liniowe' : '⚪ Rolki'}</div></div>
+                <div class="di"><div class="di-lbl">Kamera</div><div class="di-val">${l.camera ? '📷 Tak' : '❌ Brak'}</div></div>
                 <div class="di"><div class="di-lbl">Bezpieczeństwo</div><div class="di-val">${l.safety || '-'}</div></div>
-                ${showBuy ? `<div class="di"><div class="di-lbl">Kup teraz</div><div class="di-val"><a href="${finalLink}" target="_blank" class="btn-aff" style="font-size:.6rem;padding:3px 8px;">KUP TERAZ</a>${isOrtur ? ' <span style="font-size:.6rem;color:var(--orange)">KOD: LASERPROFIT</span>' : ''}</div></div>` : ''}
+                <div class="di"><div class="di-lbl">Gwarancja</div><div class="di-val">${l.warranty || '-'} m-cy</div></div>
             </div>
         </td>
     </tr>`;
