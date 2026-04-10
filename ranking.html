@@ -240,16 +240,16 @@ tbody tr.in-compare td{background:rgba(255,107,43,.05);border-left:3px solid var
 <div class="table-wrap">
 <table id="laserTable">
 <colgroup>
-  <col style="width:16%">  <!-- MODEL -->
-  <col style="width:6%">   <!-- MOC -->
-  <col style="width:9%">   <!-- OBSZAR -->
-  <col style="width:8%">   <!-- OBUDOWA -->
-  <col style="width:9%">   <!-- BUDOWA -->
-  <col style="width:8%">   <!-- AIR ASSIST -->
-  <col style="width:9%">   <!-- ROZMIAR PLAMKI -->
-  <col style="width:9%">   <!-- POŁĄCZENIE -->
-  <col style="width:10%">  <!-- WYSYŁKA/GWA -->
-  <col style="width:16%">  <!-- AKCJA -->
+  <col style="width:16%">
+  <col style="width:6%">
+  <col style="width:9%">
+  <col style="width:8%">
+  <col style="width:9%">
+  <col style="width:8%">
+  <col style="width:9%">
+  <col style="width:9%">
+  <col style="width:10%">
+  <col style="width:16%">
 </colgroup>
 <thead>
   <tr>
@@ -305,21 +305,48 @@ async function loadData() {
         skipEmptyLines: true,
         complete: function(results) {
             // Konwersja danych z CSV na format czytelny dla skryptu
+            // Lookup table for areaH (height) by laser id
+            const AREA_H = {"4": "406", "5": "319", "6": "220", "7": "358", "8": "415", "10": "415", "11": "420", "12": "400", "13": "400", "14": "595", "15": "400", "16": "110", "17": "365", "18": "305", "19": "385", "20": "400", "21": "400", "22": "200", "23": "440", "24": "415", "25": "400", "26": "400", "27": "400", "28": "400", "29": "400", "30": "175", "31": "175", "32": "175", "33": "320"};
+
+            function toBool(v) {
+                const s = String(v).toUpperCase().trim();
+                return s === 'TRUE' || s === 'PRAWDA' || s === '1' || s === 'YES';
+            }
+            function toAirAssist(v) {
+                const s = String(v).toLowerCase().trim();
+                if(s === 'builtin' || s === 'yes (auto)') return 'builtin';
+                if(s === 'option') return 'option';
+                return 'none';
+            }
             LASERS = results.data.map(l => ({
-                ...l,
-                wood: String(l.wood).toUpperCase().includes('TRUE') || String(l.wood).includes('PRAWDA'),
-                leather: String(l.leather).toUpperCase().includes('TRUE') || String(l.leather).includes('PRAWDA'),
-                enclosed: String(l.enclosed).toUpperCase().includes('TRUE') || String(l.enclosed).includes('PRAWDA'),
-                shipEU: String(l.shipEU).toUpperCase().includes('TRUE') || String(l.shipEU).includes('PRAWDA'),
-                expandable: String(l.expandable).toUpperCase().includes('TRUE') || String(l.expandable).includes('PRAWDA'),
-                inStock: String(l.inStock).toUpperCase().includes('TRUE') || String(l.inStock).includes('PRAWDA'),
-                // NOWE PARAMETRY:
-                linearRails: String(l.linearRails).toUpperCase().includes('TRUE') || String(l.linearRails).includes('PRAWDA'),
-                camera: String(l.builtInCamera).toUpperCase().includes('TRUE') || String(l.builtInCamera).includes('PRAWDA'),
-                spotSize: l.spotSize || '-',
-                wavelength: l.wavelength || '455nm',
-                safety: l.safetySensors || '-',
-                conn: l.conn ? String(l.conn).split(';') : []
+                id:         l['id'],
+                brand:      l['Marka'],
+                name:       l['Nazwa'],
+                type:       l['Rodzaj lasera'],
+                power:      l['Moc'],
+                areaW:      l['Wielkość'],
+                areaH:      AREA_H[String(l['id'])] || l['Wielkość'],
+                speed:      l['Max Prędkość'],
+                cutDepth:   l['Cięcie'],
+                wood:       toBool(l['Drewno']),
+                acrylic:    l['Plexa'] || '-',
+                metal:      l['Metal'] || '-',
+                leather:    toBool(l['Skóra']),
+                conn:       l['Połączenie'] ? String(l['Połączenie']).split(';') : [],
+                airAssist:  toAirAssist(l['Powietrze']),
+                enclosed:   toBool(l['Obudowa']),
+                shipFrom:   l['Wysyłka '] || 'CN',
+                shipEU:     false,
+                warranty:   l['Gwarancja'],
+                spotSize:   l['Wielkość plamki lasera'] || '-',
+                wavelength: l['Długość fali'] || '455nm',
+                linearRails: false,
+                affLink:    l['Link afiliacyjny jak doatępny'] || '',
+                safety:     l['Bezpieczeństwo'] || '-',
+                camera:     toBool(l['Wbudowana kamera']),
+                expandable: toBool(l['Możliwość powiększenia']),
+                inStock:    true,
+                priceEur:   0
             }));
             
             console.log("Załadowano laserów:", LASERS.length);
@@ -347,6 +374,7 @@ async function fetchRates() {
 
 function pln(eur) { return Math.round(eur * rateEUR).toLocaleString('pl-PL'); }
 
+// 3. RENDEROWANIE WIERSZA
 function toggleDetails(id, btn) {
     const row = document.getElementById(id);
     if (!row) return;
@@ -358,25 +386,15 @@ function toggleDetails(id, btn) {
 function renderRow(l) {
     const inCmp = compareSet.has(l.id);
     const isOrtur = (l.brand && l.brand.toLowerCase() === 'ortur');
-    const hasAffLink = !!(l.affLink && l.affLink.trim() && l.affLink.trim() !== '-');
+    const hasAffLink = !!(l.affLink && l.affLink.trim() && l.affLink.trim() !== '-' && l.affLink.trim() !== '#');
     const finalLink = isOrtur ? 'https://ortur.net/?ref=nskubuaw' : l.affLink;
     const showBuy = isOrtur || hasAffLink;
 
-    const connIcons = l.conn && l.conn.length > 0 
-        ? l.conn.map(c => `<span class="conn-chip on">${c}</span>`).join(' ') 
+    const connIcons = l.conn && l.conn.length > 0
+        ? l.conn.map(c => `<span class="conn-chip on">${c}</span>`).join(' ')
         : '<span class="na-lbl">-</span>';
 
     const detailsId = `details-${l.id}`;
-
-    const priceAndBuyHtml = showBuy ? `
-        <div class="price-cell" style="margin-bottom:2px">
-            <span class="price-eur">${l.priceEur} €</span>
-            <span class="price-pln"> ≈ ${pln(l.priceEur)} zł</span>
-            ${l.shipEU ? '<br><span class="ship-eu">📦 Magazyn EU</span>' : ''}
-        </div>
-        <a href="${finalLink}" target="_blank" class="btn-aff">KUP TERAZ</a>
-        ${isOrtur ? `<div style="font-size:10px; color:var(--orange); font-weight:700; text-align:center; border:1px dashed var(--orange); border-radius:4px; padding:2px; margin-top:2px;">KOD: ${MY_PROMO_CODE}</div>` : ''}
-    ` : '';
 
     return `
     <tr class="laser-row ${inCmp ? 'in-compare' : ''}" data-id="${l.id}">
@@ -392,7 +410,7 @@ function renderRow(l) {
         <td class="power-cell">${l.power} W</td>
         <td class="area-cell">
             ${l.areaW}×${l.areaH} mm<br>
-            ${l.expandable ? `<span class="area-exp yes">⚡ Powiększ.</span>` : ''}
+            ${l.expandable ? '<span class="area-exp yes">⚡ Powiększ.</span>' : ''}
         </td>
         <td style="font-size:.68rem">
             ${l.enclosed ? '🔒 Zamknięta' : '<span class="na-lbl">Otwarta</span>'}
@@ -424,14 +442,18 @@ function renderRow(l) {
             <div class="detail-grid">
                 <div class="di"><div class="di-lbl">Kamera</div><div class="di-val">${l.camera ? '📷 Tak' : '❌ Brak'}</div></div>
                 <div class="di"><div class="di-lbl">Długość fali</div><div class="di-val">${l.wavelength || '-'}</div></div>
-                <div class="di"><div class="di-lbl">Grubość cięcia</div><div class="di-val">${l.cutDepth || '-'} mm</div></div>
+                <div class="di"><div class="di-lbl">Grubość cięcia</div><div class="di-val">${l.cutDepth || '-'}</div></div>
                 <div class="di"><div class="di-lbl">Max prędkość</div><div class="di-val">${l.speed ? l.speed + ' mm/min' : '-'}</div></div>
                 <div class="di"><div class="di-lbl">Materiały</div><div class="di-val">${l.wood ? '✅ Drewno ' : ''}${l.leather ? '✅ Skóra' : ''}</div></div>
-                ${!showBuy ? `<div class="di"><div class="di-lbl">Cena</div><div class="di-val" style="color:var(--orange)">${l.priceEur} € <span style="color:var(--muted);font-size:.65rem">≈ ${pln(l.priceEur)} zł</span></div></div>` : ''}
+                <div class="di"><div class="di-lbl">Akryl</div><div class="di-val">${l.acrylic || '-'}</div></div>
+                <div class="di"><div class="di-lbl">Metal</div><div class="di-val">${l.metal || '-'}</div></div>
+                <div class="di"><div class="di-lbl">Bezpieczeństwo</div><div class="di-val">${l.safety || '-'}</div></div>
+                ${showBuy ? `<div class="di"><div class="di-lbl">Kup teraz</div><div class="di-val"><a href="${finalLink}" target="_blank" class="btn-aff" style="font-size:.6rem;padding:3px 8px;">KUP TERAZ</a>${isOrtur ? ' <span style="font-size:.6rem;color:var(--orange)">KOD: LASERPROFIT</span>' : ''}</div></div>` : ''}
             </div>
         </td>
     </tr>`;
 }
+
 function applyFilters() {
     const search = document.getElementById('search').value.toLowerCase();
     const fType = document.getElementById('fType').value;
