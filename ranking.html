@@ -364,7 +364,7 @@ async function loadData() {
                 warranty:   l['Gwarancja'],
                 spotSize:   l['Wielkość plamki lasera'] || '-',
                 wavelength: l['Długość fali'] || '455nm',
-                linearRails: false,
+                linearRails: (function(v){ const s=String(v).toLowerCase().trim(); return s.includes('szyn') || s.includes('linear') || s==='true'; })(l['Rodzaj prowadnic']),
                 affLink:    l['Link afiliacyjny jak doatępny'] || '',
                 safety:     l['Bezpieczeństwo'] || '-',
                 camera:     toBool(l['Wbudowana kamera']),
