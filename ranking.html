@@ -48,7 +48,7 @@
 }
 :root{--bg:#0d1b2e;--card:#132237;--card2:#1a2f47;--orange:#ff6b2b;--navy:#1e3a5f;--text:#e8f0fe;--muted:#7a91b0;--border:#1e3352;--input-bg:#0a1624;--font:'Poppins',sans-serif;--green:#34d399;--red:#f87171;--blue:#38bdf8;--purple:#a855f7}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;font-size:13px}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;font-size:13px;overflow-x:hidden}
 nav{background:rgba(13,27,46,.97);padding:12px 0;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:300;backdrop-filter:blur(12px)}
 .nav-content{max-width:1300px;margin:0 auto;padding:0 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .logo{font-weight:700;font-size:.9rem;color:var(--orange);text-decoration:none;letter-spacing:1.5px;white-space:nowrap}
@@ -75,8 +75,8 @@ nav{background:rgba(13,27,46,.97);padding:12px 0;border-bottom:1px solid var(--b
 .results-count{font-size:.7rem;color:var(--muted);margin-left:auto;align-self:center}
 
 /* TABLE */
-.table-wrap{max-width:1300px;margin:0 auto;padding:0 16px 60px}
-table{width:100%;border-collapse:collapse;background:var(--card);border-radius:12px;overflow:hidden;table-layout:fixed}
+.table-wrap{max-width:1300px;margin:0 auto;padding:0 16px 60px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;min-width:900px;border-collapse:collapse;background:var(--card);border-radius:12px;overflow:hidden;table-layout:fixed}
 thead tr{background:var(--navy);border-bottom:2px solid var(--orange)}
 th{padding:5px 4px;text-align:left;font-size:.58rem;color:var(--orange);text-transform:uppercase;letter-spacing:.6px;font-weight:700;cursor:pointer;white-space:nowrap;user-select:none}
 th:hover{color:#fff}
@@ -109,6 +109,15 @@ tbody tr.in-compare td{background:rgba(255,107,43,.05);border-left:3px solid var
 .mc-yes{background:rgba(52,211,153,.08);color:var(--green);border:1px solid rgba(52,211,153,.2)}
 .mc-partial{background:rgba(251,191,36,.06);color:#fbbf24;border:1px solid rgba(251,191,36,.2)}
 .mc-no{background:rgba(248,113,113,.05);color:var(--red);border:1px solid rgba(248,113,113,.15);opacity:.6}
+/* Unikalne kolory per materiał */
+.mc-cut{background:rgba(52,211,153,.12);color:#34d399;border:1px solid rgba(52,211,153,.3);font-weight:600}
+.mc-eng{background:rgba(56,189,248,.1);color:#38bdf8;border:1px solid rgba(56,189,248,.25)}
+.mat-section-label{font-size:.52rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:3px;margin-bottom:1px;display:block}
+.mat-btn{position:relative;display:inline-block;border:none;border-radius:4px;padding:2px 7px;font-size:.58rem;font-weight:700;cursor:default;font-family:var(--font);margin:1px}
+.mat-btn-cut{background:rgba(52,211,153,.15);color:#34d399;border:1px solid rgba(52,211,153,.3)}
+.mat-btn-eng{background:rgba(56,189,248,.12);color:#38bdf8;border:1px solid rgba(56,189,248,.25)}
+.mat-btn .mat-tooltip{display:none;position:fixed;z-index:9999;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:.6rem;color:var(--text);white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.4);pointer-events:none;line-height:1.7;min-width:120px}
+.mat-btn:hover .mat-tooltip{display:block}
 
 .conn-chips{display:flex;gap:2px;flex-wrap:wrap}
 .conn-chip{padding:2px 5px;border-radius:4px;font-size:.58rem;font-weight:600;background:rgba(255,255,255,.05);color:var(--muted);border:1px solid var(--border)}
@@ -197,6 +206,7 @@ tbody tr.in-compare td{background:rgba(255,107,43,.05);border-left:3px solid var
   <div class="brand-badge">Longer</div>
   <div class="brand-badge">ComMarker</div>
 </div>
+
 <div class="filters">
   <div class="fg"><label>🔍 Szukaj</label><input type="text" id="search" placeholder="xTool, D1 Pro, Atomstack..." oninput="applyFilters()"></div>
   <div class="fg"><label>⚡ Typ</label>
@@ -209,9 +219,21 @@ tbody tr.in-compare td{background:rgba(255,107,43,.05);border-left:3px solid var
       <option value="">Każda</option><option value="300">do 300 €</option><option value="600">do 600 €</option><option value="1000">do 1000 €</option><option value="2000">do 2000 €</option><option value="5000">do 5000 €</option>
     </select>
   </div>
-  <div class="fg"><label>🔋 Min. moc (W)</label>
+  <div class="fg"><label>⚡ Moc (W)</label>
     <select id="fPower" onchange="applyFilters()">
-      <option value="">Każda</option><option value="5">5W+</option><option value="10">10W+</option><option value="20">20W+</option><option value="40">40W+</option><option value="60">60W+</option>
+      <option value="">Każda</option>
+      <option value="5">5W</option>
+      <option value="5.5">5.5W</option>
+      <option value="10">10W</option>
+      <option value="20">20W</option>
+      <option value="22">22W</option>
+      <option value="24">24W</option>
+      <option value="30">30W</option>
+      <option value="33">33W</option>
+      <option value="40">40W</option>
+      <option value="48">48W</option>
+      <option value="55">55W</option>
+      <option value="60">60W</option>
     </select>
   </div>
   <div class="fg"><label>🪵 Materiał</label>
@@ -240,28 +262,28 @@ tbody tr.in-compare td{background:rgba(255,107,43,.05);border-left:3px solid var
 <div class="table-wrap">
 <table id="laserTable">
 <colgroup>
-  <col style="width:16%">  <!-- MODEL -->
-  <col style="width:6%">   <!-- MOC -->
-  <col style="width:9%">   <!-- OBSZAR -->
-  <col style="width:8%">   <!-- OBUDOWA -->
-  <col style="width:9%">   <!-- BUDOWA -->
-  <col style="width:8%">   <!-- AIR ASSIST -->
-  <col style="width:9%">   <!-- ROZMIAR PLAMKI -->
-  <col style="width:9%">   <!-- POŁĄCZENIE -->
-  <col style="width:10%">  <!-- WYSYŁKA/GWA -->
-  <col style="width:16%">  <!-- AKCJA -->
+  <col style="width:10%">  <!-- Marka -->
+  <col style="width:12%">  <!-- Nazwa -->
+  <col style="width:7%">   <!-- Typ -->
+  <col style="width:6%">   <!-- Moc -->
+  <col style="width:10%">  <!-- Pole cięcia -->
+  <col style="width:8%">   <!-- Prędkość -->
+  <col style="width:12%">  <!-- Cięcie/Materiały -->
+  <col style="width:10%">  <!-- Połączenie -->
+  <col style="width:9%">   <!-- Wysyłka -->
+  <col style="width:16%">  <!-- Akcja -->
 </colgroup>
 <thead>
   <tr>
-    <th>MODEL</th>
+    <th>MARKA</th>
+    <th>NAZWA</th>
+    <th>TYP</th>
     <th>MOC</th>
-    <th>OBSZAR</th>
-    <th>OBUDOWA</th>
-    <th>BUDOWA</th>
-    <th>AIR ASSIST</th>
-    <th>PLAMKA</th>
+    <th>POLE CIĘCIA</th>
+    <th>PRĘDKOŚĆ</th>
+    <th>MATERIAŁY</th>
     <th>POŁĄCZENIE</th>
-    <th>WYSYŁKA / GWA</th>
+    <th>WYSYŁKA</th>
     <th>AKCJA</th>
   </tr>
 </thead>
@@ -305,21 +327,50 @@ async function loadData() {
         skipEmptyLines: true,
         complete: function(results) {
             // Konwersja danych z CSV na format czytelny dla skryptu
+            // Lookup table for areaH (height) by laser id
+            const AREA_H = {"4": "406", "5": "319", "6": "220", "7": "358", "8": "415", "10": "415", "11": "420", "12": "400", "13": "400", "14": "595", "15": "400", "16": "110", "17": "365", "18": "305", "19": "385", "20": "400", "21": "400", "22": "200", "23": "440", "24": "415", "25": "400", "26": "400", "27": "400", "28": "400", "29": "400", "30": "175", "31": "175", "32": "175", "33": "320"};
+
+            function toBool(v) {
+                const s = String(v).toUpperCase().trim();
+                return s === 'TRUE' || s === 'PRAWDA' || s === '1' || s === 'YES';
+            }
+            function toAirAssist(v) {
+                const s = String(v).toLowerCase().trim();
+                if(s === 'builtin' || s === 'yes (auto)') return 'builtin';
+                if(s === 'option') return 'option';
+                return 'none';
+            }
             LASERS = results.data.map(l => ({
-                ...l,
-                wood: String(l.wood).toUpperCase().includes('TRUE') || String(l.wood).includes('PRAWDA'),
-                leather: String(l.leather).toUpperCase().includes('TRUE') || String(l.leather).includes('PRAWDA'),
-                enclosed: String(l.enclosed).toUpperCase().includes('TRUE') || String(l.enclosed).includes('PRAWDA'),
-                shipEU: String(l.shipEU).toUpperCase().includes('TRUE') || String(l.shipEU).includes('PRAWDA'),
-                expandable: String(l.expandable).toUpperCase().includes('TRUE') || String(l.expandable).includes('PRAWDA'),
-                inStock: String(l.inStock).toUpperCase().includes('TRUE') || String(l.inStock).includes('PRAWDA'),
-                // NOWE PARAMETRY:
-                linearRails: String(l.linearRails).toUpperCase().includes('TRUE') || String(l.linearRails).includes('PRAWDA'),
-                camera: String(l.builtInCamera).toUpperCase().includes('TRUE') || String(l.builtInCamera).includes('PRAWDA'),
-                spotSize: l.spotSize || '-',
-                wavelength: l.wavelength || '455nm',
-                safety: l.safetySensors || '-',
-                conn: l.conn ? String(l.conn).split(';') : []
+                id:         l['id'],
+                brand:      l['Marka'],
+                name:       l['Nazwa'],
+                type:       l['Rodzaj lasera'],
+                power:      l['Moc'],
+                areaW:      l['Wielkość'],
+                areaH:      AREA_H[String(l['id'])] || l['Wielkość'],
+                speed:      l['Max Prędkość'],
+                cutDepth:   l['Cięcie'],
+                cutMats:    l['Materiały - cięcie'] ? String(l['Materiały - cięcie']).split(';').map(s=>s.trim()).filter(Boolean) : [],
+                engMats:    l['Materiały - grawerowanie'] ? String(l['Materiały - grawerowanie']).split(';').map(s=>s.trim()).filter(Boolean) : [],
+                wood:       true,
+                acrylic:    '-',
+                metal:      '-',
+                leather:    true,
+                conn:       l['Połączenie'] ? String(l['Połączenie']).split(';') : [],
+                airAssist:  toAirAssist(l['Powietrze']),
+                enclosed:   toBool(l['Obudowa']),
+                shipFrom:   l['Wysyłka '] || 'CN',
+                shipEU:     false,
+                warranty:   l['Gwarancja'],
+                spotSize:   l['Wielkość plamki lasera'] || '-',
+                wavelength: l['Długość fali'] || '455nm',
+                linearRails: (function(v){ const s=String(v).toLowerCase().trim(); return s.includes('szyn') || s.includes('linear') || s==='true'; })(l['Rodzaj prowadnic']),
+                affLink:    l['Link afiliacyjny jak doatępny'] || '',
+                safety:     l['Bezpieczeństwo'] || '-',
+                camera:     toBool(l['Wbudowana kamera']),
+                expandable: toBool(l['Możliwość powiększenia']),
+                inStock:    true,
+                priceEur:   0
             }));
             
             console.log("Załadowano laserów:", LASERS.length);
@@ -347,6 +398,20 @@ async function fetchRates() {
 
 function pln(eur) { return Math.round(eur * rateEUR).toLocaleString('pl-PL'); }
 
+// 3. RENDEROWANIE WIERSZA
+function showTip(el, e) {
+    const tip = el.querySelector('.mat-tooltip');
+    if (!tip) return;
+    tip.innerHTML = el.dataset.tip;
+    tip.style.display = 'block';
+    const r = el.getBoundingClientRect();
+    tip.style.left = Math.min(r.left, window.innerWidth - 160) + 'px';
+    tip.style.top = (r.bottom + 6) + 'px';
+}
+function hideTip(el) {
+    const tip = el.querySelector('.mat-tooltip');
+    if (tip) tip.style.display = 'none';
+}
 function toggleDetails(id, btn) {
     const row = document.getElementById(id);
     if (!row) return;
@@ -358,63 +423,48 @@ function toggleDetails(id, btn) {
 function renderRow(l) {
     const inCmp = compareSet.has(l.id);
     const isOrtur = (l.brand && l.brand.toLowerCase() === 'ortur');
-    const hasAffLink = !!(l.affLink && l.affLink.trim() && l.affLink.trim() !== '-');
+    const hasAffLink = !!(l.affLink && l.affLink.trim() && l.affLink.trim() !== '-' && l.affLink.trim() !== '#');
     const finalLink = isOrtur ? 'https://ortur.net/?ref=nskubuaw' : l.affLink;
     const showBuy = isOrtur || hasAffLink;
 
-    const connIcons = l.conn && l.conn.length > 0 
-        ? l.conn.map(c => `<span class="conn-chip on">${c}</span>`).join(' ') 
+    const connIcons = l.conn && l.conn.length > 0
+        ? l.conn.map(c => `<span class="conn-chip on">${c}</span>`).join(' ')
         : '<span class="na-lbl">-</span>';
 
     const detailsId = `details-${l.id}`;
 
-    const priceAndBuyHtml = showBuy ? `
-        <div class="price-cell" style="margin-bottom:2px">
-            <span class="price-eur">${l.priceEur} €</span>
-            <span class="price-pln"> ≈ ${pln(l.priceEur)} zł</span>
-            ${l.shipEU ? '<br><span class="ship-eu">📦 Magazyn EU</span>' : ''}
-        </div>
-        <a href="${finalLink}" target="_blank" class="btn-aff">KUP TERAZ</a>
-        ${isOrtur ? `<div style="font-size:10px; color:var(--orange); font-weight:700; text-align:center; border:1px dashed var(--orange); border-radius:4px; padding:2px; margin-top:2px;">KOD: ${MY_PROMO_CODE}</div>` : ''}
-    ` : '';
+    // Konwersja wartości materiałów na czytelne etykiety
+    const cutList = (l.cutMats||[]);
+    const engList = (l.engMats||[]);
+    const cutTooltip = cutList.map(m => `✂ ${m}`).join('<br>');
+    const engTooltip = engList.map(m => `✦ ${m}`).join('<br>');
+    const matHtml = `<div>
+        ${cutList.length ? `<span class="mat-btn mat-btn-cut" onmouseenter="showTip(this,event)" onmouseleave="hideTip(this)" data-tip="${cutTooltip}">✂ Cięcie<span class="mat-tooltip"></span></span>` : ''}
+        ${engList.length ? `<span class="mat-btn mat-btn-eng" onmouseenter="showTip(this,event)" onmouseleave="hideTip(this)" data-tip="${engTooltip}">✦ Grawer<span class="mat-tooltip"></span></span>` : ''}
+    </div>`;
 
     return `
     <tr class="laser-row ${inCmp ? 'in-compare' : ''}" data-id="${l.id}">
+        <td style="font-weight:700;font-size:.72rem">${l.brand}</td>
         <td>
-            <div class="model-cell">
-                <span class="model-name">${l.brand} ${l.name}</span>
-                <span class="cat-badge ${l.type === 'fiber' ? 'cat-fiber' : 'cat-diode'}">
-                    ${l.type === 'fiber' ? 'FIBER' : 'DIODOWY'}
-                </span>
-                <button class="expand-btn" onclick="toggleDetails('${detailsId}', this)">▼ Szczegóły</button>
-            </div>
+            <div style="font-weight:700;font-size:.72rem;line-height:1.2">${l.name}</div>
+            <button class="expand-btn" onclick="toggleDetails('${detailsId}', this)" style="margin-top:3px">▼ Więcej</button>
         </td>
-        <td class="power-cell">${l.power} W</td>
-        <td class="area-cell">
-            ${l.areaW}×${l.areaH} mm<br>
-            ${l.expandable ? `<span class="area-exp yes">⚡ Powiększ.</span>` : ''}
-        </td>
-        <td style="font-size:.68rem">
-            ${l.enclosed ? '🔒 Zamknięta' : '<span class="na-lbl">Otwarta</span>'}
-        </td>
-        <td style="font-size:.65rem">
-            ${l.linearRails ? '✅ Szyny' : '⚪ Rolki'}
-        </td>
+        <td><span class="cat-badge ${l.type === 'fiber' ? 'cat-fiber' : 'cat-diode'}">${l.type === 'fiber' ? 'FIBER' : 'DIOD.'}</span></td>
+        <td class="power-cell">${l.power}W</td>
+        <td style="font-size:.68rem">${l.areaW}×${l.areaH} mm${l.expandable ? '<br><span class="area-exp yes" style="font-size:.58rem">⚡ Powiększ.</span>' : ''}</td>
+        <td style="font-size:.68rem">${l.speed || '-'} <span style="font-size:.55rem;color:var(--muted)">mm/min</span></td>
         <td>
-            ${l.airAssist === 'builtin' ? '<span class="check">✅ Tak</span>' : (l.airAssist === 'option' ? '<span class="opt-lbl">◎ Opcja</span>' : '<span class="cross">❌</span>')}
+            <div style="font-size:.6rem;margin-bottom:2px">${l.cutDepth || '-'}</div>
+            <div class="mat-chips">${matHtml}</div>
         </td>
-        <td style="font-size:.68rem">${l.spotSize || '-'}</td>
         <td><div class="conn-chips">${connIcons}</div></td>
-        <td>
-            <div class="ship-cell">
-                <span class="ship-from">📍 ${l.shipFrom || 'CN'}</span><br>
-                <span class="warranty">🛡️ ${l.warranty || '12'} m-cy</span>
-            </div>
-        </td>
+        <td style="font-size:.68rem">📍 ${l.shipFrom || 'CN'}</td>
         <td>
             <div class="action-cell">
+                ${showBuy ? `<a href="${finalLink}" target="_blank" class="btn-aff" style="font-size:.6rem;padding:3px 8px">KUP TERAZ</a>${isOrtur ? `<div style="font-size:.55rem;color:var(--orange);text-align:center;border:1px dashed var(--orange);border-radius:3px;padding:1px">KOD: LASERPROFIT</div>` : ''}` : ''}
                 <button class="btn-add-compare ${inCmp ? 'added' : ''}" onclick="toggleCompare(${l.id})">
-                    ${inCmp ? '✔ W liście' : '⊕ Porównaj'}
+                    ${inCmp ? '✔ Lista' : '⊕ Porównaj'}
                 </button>
             </div>
         </td>
@@ -422,16 +472,18 @@ function renderRow(l) {
     <tr class="detail-row" id="${detailsId}" style="display:none">
         <td colspan="10">
             <div class="detail-grid">
-                <div class="di"><div class="di-lbl">Kamera</div><div class="di-val">${l.camera ? '📷 Tak' : '❌ Brak'}</div></div>
+                <div class="di"><div class="di-lbl">Obudowa</div><div class="di-val">${l.enclosed ? '🔒 Zamknięta' : 'Otwarta'}</div></div>
+                <div class="di"><div class="di-lbl">Wielkość plamki</div><div class="di-val">${l.spotSize || '-'}</div></div>
                 <div class="di"><div class="di-lbl">Długość fali</div><div class="di-val">${l.wavelength || '-'}</div></div>
-                <div class="di"><div class="di-lbl">Grubość cięcia</div><div class="di-val">${l.cutDepth || '-'} mm</div></div>
-                <div class="di"><div class="di-lbl">Max prędkość</div><div class="di-val">${l.speed ? l.speed + ' mm/min' : '-'}</div></div>
-                <div class="di"><div class="di-lbl">Materiały</div><div class="di-val">${l.wood ? '✅ Drewno ' : ''}${l.leather ? '✅ Skóra' : ''}</div></div>
-                ${!showBuy ? `<div class="di"><div class="di-lbl">Cena</div><div class="di-val" style="color:var(--orange)">${l.priceEur} € <span style="color:var(--muted);font-size:.65rem">≈ ${pln(l.priceEur)} zł</span></div></div>` : ''}
+                <div class="di"><div class="di-lbl">Prowadnice</div><div class="di-val">${l.linearRails ? '✅ Szyny liniowe' : '⚪ Rolki'}</div></div>
+                <div class="di"><div class="di-lbl">Kamera</div><div class="di-val">${l.camera ? '📷 Tak' : '❌ Brak'}</div></div>
+                <div class="di"><div class="di-lbl">Bezpieczeństwo</div><div class="di-val">${l.safety || '-'}</div></div>
+                <div class="di"><div class="di-lbl">Gwarancja</div><div class="di-val">${l.warranty || '-'} m-cy</div></div>
             </div>
         </td>
     </tr>`;
 }
+
 function applyFilters() {
     const search = document.getElementById('search').value.toLowerCase();
     const fType = document.getElementById('fType').value;
@@ -453,7 +505,7 @@ function applyFilters() {
         if(l.priceEur > fPrice) return false;
         
         // Moc Minimalna
-        if(fPower && parseFloat(l.power) < fPower) return false;
+        if(fPower && parseFloat(l.power) !== fPower) return false;
         
         // Materiały
         if(fMat === 'wood' && !l.wood) return false;
