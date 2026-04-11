@@ -359,18 +359,25 @@ function processData(data) {
 
 async function loadData() {
     await fetchRates();
-    Papa.parse(SHEET_URL, {
-        download: true,
-        header: true,
-        skipEmptyLines: true,
-        complete: function(results) {
+    // Pobierz CSV przez fetch z obsługą CORS
+    const CORS_URL = 'https://corsproxy.io/?' + encodeURIComponent(SHEET_URL);
+    fetch(CORS_URL)
+        .then(r => {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.text();
+        })
+        .then(csvText => {
+            const results = Papa.parse(csvText, {
+                header: true,
+                skipEmptyLines: true
+            });
             const d = results.data && results.data.length > 1 ? results.data : CSV_DATA;
             processData(d);
-        },
-        error: function() {
+        })
+        .catch(() => {
+            // Fallback do danych wbudowanych w HTML
             processData(CSV_DATA);
-        }
-    });
+        });
 }
 
 // 2. KURSY WALUT
