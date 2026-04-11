@@ -307,7 +307,7 @@ tbody tr.in-compare td{background:rgba(255,107,43,.05);border-left:3px solid var
 // ═══════════════════════════════════════════════════════════
 // KONFIGURACJA I LINK DO ARKUSZA
 // ═══════════════════════════════════════════════════════════
-const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTPmn9gQumk_QDGRqfBdl1gSPKJ2wP8kRARb5UZc0NdQglJA-Y3e1Wpv96YvcpJkonVNJk9RXKbXboM/pub?output=csv';
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTPmn9gQumk_QDGRqfBdl1gSPKJ2wP8kRARb5UZc0NdQglJA-Y3e1Wpv96YvcpJkonVNJk9RXKbXboM/pub?gid=1210054405&single=true&output=csv';
 const MY_PROMO_CODE = "LASERPROFIT";
 
 let LASERS = []; 
@@ -315,74 +315,64 @@ let rateEUR = 4.28;
 let compareSet = new Set();
 
 // 1. POBIERANIE DANYCH Z GOOGLE SHEETS
+// 1. Podmień całą funkcję loadData na tę wersję:
 async function loadData() {
-    // Najpierw pobierz kursy walut
     await fetchRates();
 
-    // Potem pobierz dane laserów
     Papa.parse(SHEET_URL, {
         download: true,
         header: true,
         dynamicTyping: true,
         skipEmptyLines: true,
         complete: function(results) {
-            // Konwersja danych z CSV na format czytelny dla skryptu
-            // Lookup table for areaH (height) by laser id
-            const AREA_H = {"4": "406", "5": "319", "6": "220", "7": "358", "8": "415", "10": "415", "11": "420", "12": "400", "13": "400", "14": "595", "15": "400", "16": "110", "17": "365", "18": "305", "19": "385", "20": "400", "21": "400", "22": "200", "23": "440", "24": "415", "25": "400", "26": "400", "27": "400", "28": "400", "29": "400", "30": "175", "31": "175", "32": "175", "33": "320"};
-
-            function toBool(v) {
-                const s = String(v).toUpperCase().trim();
-                return s === 'TRUE' || s === 'PRAWDA' || s === '1' || s === 'YES';
-            }
-            function toAirAssist(v) {
-                const s = String(v).toLowerCase().trim();
-                if(s === 'builtin' || s === 'yes (auto)') return 'builtin';
-                if(s === 'option') return 'option';
-                return 'none';
-            }
-            LASERS = results.data.map(l => ({
-                id:         l['id'],
+            // Mapowanie danych z poprawionymi nazwami kolumn z Twojego CSV
+            LASERS = results.data.map((l, index) => ({
+                // Jeśli kolumna id jest pusta, używamy numeru wiersza (index)
+                id:         l['id'] || index, 
                 brand:      l['Marka'],
                 name:       l['Nazwa'],
                 type:       l['Rodzaj lasera'],
                 power:      l['Moc'],
                 areaW:      l['Wielkość'],
-                areaH:      AREA_H[String(l['id'])] || l['Wielkość'],
+                areaH:      l['WielkośćH'], // Poprawiona nazwa kolumny
                 speed:      l['Max Prędkość'],
-                cutDepth:   l['Cięcie'],
+                cutDepth:   l['Cięcie'] || '-',
                 cutMats:    l['Materiały - cięcie'] ? String(l['Materiały - cięcie']).split(';').map(s=>s.trim()).filter(Boolean) : [],
                 engMats:    l['Materiały - grawerowanie'] ? String(l['Materiały - grawerowanie']).split(';').map(s=>s.trim()).filter(Boolean) : [],
                 wood:       true,
-                acrylic:    '-',
-                metal:      '-',
                 leather:    true,
                 conn:       l['Połączenie'] ? String(l['Połączenie']).split(';') : [],
                 airAssist:  toAirAssist(l['Powietrze']),
                 enclosed:   toBool(l['Obudowa']),
-                shipFrom:   l['Wysyłka '] || 'CN',
-                shipEU:     false,
+                shipFrom:   l['Wysyłka'] || 'CN', // Usunięta spacja z nazwy 'Wysyłka '
+                shipEU:     String(l['Wysyłka']).includes('EU') || String(l['Wysyłka']).includes('Niemcy'),
                 warranty:   l['Gwarancja'],
                 spotSize:   l['Wielkość plamki lasera'] || '-',
                 wavelength: l['Długość fali'] || '455nm',
-                linearRails: (function(v){ const s=String(v).toLowerCase().trim(); return s.includes('szyn') || s.includes('linear') || s==='true'; })(l['Rodzaj prowadnic']),
+                linearRails: (function(v){ 
+                    const s = String(v).toLowerCase().trim(); 
+                    return s.includes('szyn') || s.includes('linear'); 
+                })(l['Rodzaj prowadnic']),
                 affLink:    l['Link afiliacyjny jak doatępny'] || '',
                 safety:     l['Bezpieczeństwo'] || '-',
                 camera:     toBool(l['Wbudowana kamera']),
                 expandable: toBool(l['Możliwość powiększenia']),
                 inStock:    true,
-                priceEur:   0
+                priceEur:   l['Cena'] || 0 // Pamiętaj o dodaniu kolumny Cena w arkuszu!
             }));
             
             console.log("Załadowano laserów:", LASERS.length);
-            applyFilters(); // Pierwsze wyświetlenie tabeli
+            applyFilters(); 
         },
         error: function(err) {
-            console.error("Błąd ładowania arkusza:", err);
-            document.getElementById('noResults').innerHTML = "Błąd ładowania danych z Arkusza Google.";
-            document.getElementById('noResults').style.display = 'block';
+            console.error("Błąd PapaParse:", err);
         }
     });
 }
+
+// 2. WAŻNE: Dodaj tę linię na samym dole przed znakiem </script>
+// To ona uruchamia pobieranie danych po wejściu na stronę
+document.addEventListener('DOMContentLoaded', loadData);
 
 // 2. KURSY WALUT
 async function fetchRates() {
@@ -669,6 +659,7 @@ function clearCompare() {
 
 // START
 loadData();
+document.addEventListener('DOMContentLoaded', loadData);
 </script>
 </body>
 </html>
