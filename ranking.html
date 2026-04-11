@@ -366,6 +366,7 @@ async function loadData() {
             }
             LASERS = results.data.map(l => ({
                 id:         l['id'],
+                status:     (String(l['id']||'').trim().toLowerCase() === 'gotowe') ? 'gotowe' : (String(l['id']||'').trim() !== '' && !isNaN(String(l['id']||'').trim()) ? 'gotowe' : ''),
                 brand:      l['Marka'],
                 name:       l['Nazwa'],
                 type:       l['Rodzaj lasera'],
@@ -519,6 +520,8 @@ function applyFilters() {
     const fSort = document.getElementById('fSort').value;
 
     let data = LASERS.filter(l => {
+        // Ukryj lasery bez statusu "Gotowe" (puste id)
+        if(!l.status) return false;
         // Szukaj (Brand + Model)
         if(search && !(l.brand + ' ' + l.name).toLowerCase().includes(search)) return false;
         
