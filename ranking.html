@@ -366,7 +366,7 @@ async function loadData() {
             }
             LASERS = results.data.map(l => ({
                 id:         l['id'],
-                status:     (String(l['id']||'').trim().toLowerCase() === 'gotowe') ? 'gotowe' : (String(l['id']||'').trim() !== '' && !isNaN(String(l['id']||'').trim()) ? 'gotowe' : ''),
+                status:     (function(v){ v=String(v||'').trim(); return (v.toLowerCase()==='gotowe'||v!=='')&&v!=='' ? 'gotowe' : ''; })(l['id']),
                 brand:      l['Marka'],
                 name:       l['Nazwa'],
                 type:       l['Rodzaj lasera'],
