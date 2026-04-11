@@ -359,10 +359,18 @@ function processData(data) {
 
 async function loadData() {
     await fetchRates();
-    // Pobierz CSV przez fetch z obsługą CORS
+
+    // Najpierw załaduj dane wbudowane natychmiast
+    processData(CSV_DATA);
+
+    // Następnie spróbuj pobrać świeże dane z Google Sheets (z timeoutem 5s)
     const CORS_URL = 'https://corsproxy.io/?' + encodeURIComponent(SHEET_URL);
-    fetch(CORS_URL)
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    fetch(CORS_URL, { signal: controller.signal })
         .then(r => {
+            clearTimeout(timeout);
             if (!r.ok) throw new Error('HTTP ' + r.status);
             return r.text();
         })
@@ -371,12 +379,12 @@ async function loadData() {
                 header: true,
                 skipEmptyLines: true
             });
-            const d = results.data && results.data.length > 1 ? results.data : CSV_DATA;
-            processData(d);
+            if (results.data && results.data.length > 1) {
+                processData(results.data); // Odśwież z nowymi danymi
+            }
         })
         .catch(() => {
-            // Fallback do danych wbudowanych w HTML
-            processData(CSV_DATA);
+            // Dane wbudowane już załadowane — nic nie rób
         });
 }
 
