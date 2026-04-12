@@ -1459,15 +1459,28 @@ function canSendMsg(callback){
         var ipKey=ip.replace(/\./g,'_').replace(/:/g,'_');
         var limitRef=chatDb.ref('chat/limits/'+ipKey);
         limitRef.once('value',function(snap){
-            var data=snap.val()||{times:[]};
+            var data=snap.val()||{};
             var now=Date.now();
-            data.times=(data.times||[]).filter(function(t){return now-t<86400000;});
-            if(data.times.length>=2){
+            var times=[];
+            // Firebase stores arrays as objects - convert back
+            if(data.times){
+                if(Array.isArray(data.times)){
+                    times=data.times;
+                } else {
+                    Object.keys(data.times).forEach(function(k){times.push(data.times[k]);});
+                }
+            }
+            // Remove entries older than 24h
+            times=times.filter(function(t){return now-t<86400000;});
+            if(times.length>=2){
                 callback(false);
                 return;
             }
-            data.times.push(now);
-            limitRef.set(data);
+            times.push(now);
+            // Store as numbered object to avoid Firebase array issues
+            var timesObj={};
+            for(var i=0;i<times.length;i++) timesObj[i]=times[i];
+            limitRef.set({times:timesObj});
             callback(true);
         });
     });
