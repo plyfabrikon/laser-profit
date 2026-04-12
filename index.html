@@ -1407,16 +1407,14 @@ async function translateText(text,targetLang){
     }catch{return text;}
 }
 
-async function chatSetLang(lang,btn){
+function chatSetLang(lang,btn){
     chatDisplayLang=lang;
     document.querySelectorAll('.chat-trans-btn').forEach(b=>b.classList.remove('active'));
     btn.classList.add('active');
-    const wrap=document.getElementById('chatMessages');
-    if(wrap){wrap.innerHTML='<div style="text-align:center;padding:20px;font-size:.72rem;color:var(--muted);">Translating...</div>';}
-    await renderMessages();
+    renderMessages();
 }
 
-async function renderMessages(){
+function renderMessages(){
     const wrap=document.getElementById('chatMessages');
     if(!wrap)return;
     const isMod=chatUser&&chatUser.email===MODERATOR_EMAIL;
@@ -1426,14 +1424,14 @@ async function renderMessages(){
         const initials=msg.user.slice(0,2).toUpperCase();
         const timeStr=new Date(msg.time).toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit'});
         const modBtn=(isMod&&!mine)?`<button class="cmod-btn" onclick="chatDelete('${msg.id}')" title="Delete">🗑</button>`:'';
-        const translateBtn=!mine&&chatDisplayLang!=='en'?`<div class="ctranslated" id="tr_${msg.id}"></div>`:'';
+        const translateDiv=!mine?`<div class="ctranslated" id="tr_${msg.id}"></div>`:'';
         html.push(`<div class="cmsg${mine?' mine':''}" id="msg_${msg.id}">
             <div class="cavatar">${initials}</div>
             <div>
                 <div class="cbubble">
                     <div class="cname">${escHtml(msg.user)} ${modBtn}</div>
                     <div class="ctext" id="txt_${msg.id}">${escHtml(msg.text)}</div>
-                    ${translateBtn}
+                    ${translateDiv}
                 </div>
                 <div class="ctime">${timeStr}</div>
             </div>
@@ -1441,9 +1439,7 @@ async function renderMessages(){
     }
     wrap.innerHTML=html.join('');
     wrap.scrollTop=wrap.scrollHeight;
-    if(chatDisplayLang!=='en'){
-        translateAllMessages();
-    }
+    if(chatDisplayLang!=='en') translateAllMessages();
 }
 
 async function translateAllMessages(){
