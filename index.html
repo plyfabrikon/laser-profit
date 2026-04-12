@@ -1328,7 +1328,7 @@ async function detectCountry(){
 // ============================================================
 // INIT
 // ============================================================
-const MODERATOR_EMAIL='laserprofit.eu@gmail.com';
+const MODERATOR_EMAIL='plyfabrikon@gmail.com';
 const CHAT_USER_KEY='lp_chat_user';
 const CHAT_MSG_KEY='lp_chat_msgs_v2';
 let chatUser=null;
@@ -1424,18 +1424,16 @@ async function renderMessages(){
     for(const msg of chatMessages){
         const mine=chatUser&&msg.email===chatUser.email;
         const initials=msg.user.slice(0,2).toUpperCase();
-        let displayText=msg.text;
-        if(chatDisplayLang!=='en'){
-            displayText=await translateText(msg.text,chatDisplayLang);
-        }
         const timeStr=new Date(msg.time).toLocaleTimeString('en',{hour:'2-digit',minute:'2-digit'});
         const modBtn=(isMod&&!mine)?`<button class="cmod-btn" onclick="chatDelete('${msg.id}')" title="Delete">🗑</button>`:'';
+        const translateBtn=!mine&&chatDisplayLang!=='en'?`<div class="ctranslated" id="tr_${msg.id}"></div>`:'';
         html.push(`<div class="cmsg${mine?' mine':''}" id="msg_${msg.id}">
             <div class="cavatar">${initials}</div>
             <div>
                 <div class="cbubble">
                     <div class="cname">${escHtml(msg.user)} ${modBtn}</div>
-                    <div class="ctext">${escHtml(displayText)}</div>
+                    <div class="ctext" id="txt_${msg.id}">${escHtml(msg.text)}</div>
+                    ${translateBtn}
                 </div>
                 <div class="ctime">${timeStr}</div>
             </div>
@@ -1443,6 +1441,19 @@ async function renderMessages(){
     }
     wrap.innerHTML=html.join('');
     wrap.scrollTop=wrap.scrollHeight;
+    if(chatDisplayLang!=='en'){
+        translateAllMessages();
+    }
+}
+
+async function translateAllMessages(){
+    for(const msg of chatMessages){
+        const el=document.getElementById('tr_'+msg.id);
+        if(!el)continue;
+        const tr=await translateText(msg.text,chatDisplayLang);
+        el.textContent=tr;
+        el.style.display='block';
+    }
 }
 
 function escHtml(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
