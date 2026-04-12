@@ -490,6 +490,7 @@ footer{text-align:center;margin-top:65px;padding:32px;color:var(--muted);border-
                 <button class="chat-trans-btn" id="transPL" onclick="chatSetLang('pl',this)">🇵🇱 PL</button>
                 <button class="chat-trans-btn" id="transDE" onclick="chatSetLang('de',this)">🇩🇪 DE</button>
                 <span style="font-size:.58rem;color:var(--muted);margin-left:auto;align-self:center;" id="chatUserInfo"></span>
+                <button id="clearHistoryBtn" onclick="clearChatHistory()" style="display:none;font-size:.58rem;color:#f87171;background:none;border:none;cursor:pointer;font-family:var(--font);">🗑 clear all</button>
                 <button onclick="chatLogout()" style="font-size:.58rem;color:var(--muted);background:none;border:none;cursor:pointer;font-family:var(--font);">logout</button>
             </div>
         </div>
@@ -1370,6 +1371,8 @@ function showChatMain(){
     document.getElementById('chatMain').style.display='flex';
     var info=document.getElementById('chatUserInfo');
     if(info) info.textContent=chatUser.name+(chatUser.email===MODERATOR_EMAIL?' 👑':'');
+    var clearBtn=document.getElementById('clearHistoryBtn');
+    if(clearBtn&&chatUser.email===MODERATOR_EMAIL) clearBtn.style.display='inline';
     var badge=document.getElementById('onlineBadge');
     if(badge) badge.textContent='● '+(Math.floor(Math.random()*8)+3)+' online';
     startListening();
@@ -1388,6 +1391,7 @@ function startListening(){
 }
 
 function renderChat(msgs){
+    window._lastMsgs=msgs;
     var wrap=document.getElementById('chatMessages');
     if(!wrap) return;
     var html='';
@@ -1418,11 +1422,14 @@ function translateAll(msgs){
             if(chatUser && msg.email===chatUser.email) return;
             var el=document.getElementById('tr_'+msg.id);
             if(!el) return;
+            if(chatDisplayLang==='en'){el.style.display='none';return;}
+            if(el.dataset.lang===chatDisplayLang){el.style.display='block';return;}
             fetch('https://api.mymemory.translated.net/get?q='+encodeURIComponent(msg.text)+'&langpair=en|'+chatDisplayLang)
             .then(function(r){return r.json();})
             .then(function(d){
                 if(el && d.responseData && d.responseData.translatedText){
                     el.textContent=d.responseData.translatedText;
+                    el.dataset.lang=chatDisplayLang;
                     el.style.display='block';
                 }
             }).catch(function(){});
@@ -1432,19 +1439,69 @@ function translateAll(msgs){
 
 function escH(t){return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
+var userIP=null;
+
+function getUserIP(callback){
+    if(userIP){callback(userIP);return;}
+    fetch('https://api.ipify.org?format=json')
+    .then(function(r){return r.json();})
+    .then(function(d){
+        userIP=d.ip||'unknown';
+        callback(userIP);
+    }).catch(function(){
+        userIP='unknown_'+Math.random().toString(36).slice(2);
+        callback(userIP);
+    });
+}
+
+function canSendMsg(callback){
+    getUserIP(function(ip){
+        var ipKey=ip.replace(/\./g,'_').replace(/:/g,'_');
+        var limitRef=chatDb.ref('chat/limits/'+ipKey);
+        limitRef.once('value',function(snap){
+            var data=snap.val()||{times:[]};
+            var now=Date.now();
+            data.times=(data.times||[]).filter(function(t){return now-t<86400000;});
+            if(data.times.length>=2){
+                callback(false);
+                return;
+            }
+            data.times.push(now);
+            limitRef.set(data);
+            callback(true);
+        });
+    });
+}
+
 function chatSend(){
     var inp=document.getElementById('chatInput');
     var text=(inp.value||'').trim();
     if(!text||!chatUser||!chatRef) return;
-    var msg={
-        id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),
-        user:chatUser.name,
-        email:chatUser.email,
-        text:text,
-        time:Date.now()
-    };
-    inp.value='';
-    chatRef.push(msg);
+    var btn=document.querySelector('.chat-send');
+    if(btn){btn.disabled=true;btn.textContent='...';}
+    canSendMsg(function(allowed){
+        if(btn){btn.disabled=false;btn.textContent='Send';}
+        if(!allowed){
+            alert('Max 2 messages per 24 hours per IP address.\nThis chat is for improvement suggestions only.');
+            return;
+        }
+        var msg={
+            id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+            user:chatUser.name,
+            email:chatUser.email,
+            text:text,
+            time:Date.now()
+        };
+        inp.value='';
+        chatRef.push(msg);
+    });
+}
+
+function clearChatHistory(){
+    if(!chatUser||chatUser.email!==MODERATOR_EMAIL){return;}
+    if(confirm('Delete ALL chat messages? This cannot be undone.')){
+        chatRef.remove();
+    }
 }
 
 function chatDelete(id){
@@ -1481,13 +1538,12 @@ function chatSetLang(lang,btn){
     chatDisplayLang=lang;
     document.querySelectorAll('.chat-trans-btn').forEach(function(b){b.classList.remove('active');});
     btn.classList.add('active');
-    if(chatRef){
-        chatRef.limitToLast(100).once('value',function(snap){
-            var msgs=[];
-            snap.forEach(function(c){var v=c.val();if(v&&v.text)msgs.push(v);});
-            renderChat(msgs);
-        });
-    }
+    // Reset cached translations
+    document.querySelectorAll('.ctranslated').forEach(function(el){
+        el.style.display='none';
+        el.dataset.lang='';
+    });
+    if(lang!=='en') translateAll(window._lastMsgs||[]);
 }
 
 document.addEventListener('DOMContentLoaded',async function(){
