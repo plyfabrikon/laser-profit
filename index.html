@@ -218,7 +218,24 @@ footer{text-align:center;margin-top:65px;padding:32px;color:var(--muted);border-
 .modal-bg.open{display:flex}
 .modal-box{background:var(--card);border-radius:14px;padding:28px;max-width:500px;width:90%;border:1px solid var(--orange);position:relative}
 .modal-close{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer}
-@media print{html,body{margin:0!important;padding:0!important}@page{margin:1.2cm;size:A4}body *{visibility:hidden;position:static!important}#printHeader,#printHeader *{visibility:visible}#expertResult,#expertResult *{visibility:visible}#printHeader{display:block!important;position:static!important;width:100%;padding:0 0 12px 0;border-bottom:2px solid #ff6b2b;margin-bottom:16px;}#expertResult{position:static!important;width:100%;border:none!important;background:#fff!important;color:#000!important;padding:0!important;margin:0!important;display:block!important}.btn-group,#expertResult .btn,#expertResult button{display:none!important}.profit-box{background:#d1fae5!important}.pb-lbl,#netProfit{color:#065f46!important}#expertBreakdown{background:#f0fdf4!important}.rl{color:#334155!important}.rv{color:#0f172a!important}nav,footer,.lang-wrap,.theme-btn,.settings-bar,iframe,#changelogBanner,.chat-panel,.calc-chat-wrap>*:not(#kalkulator){display:none!important}#logoModal{display:none!important}#kalkulator{display:block!important;visibility:visible!important}}
+@media print{
+@page{margin:1.5cm;size:A4}
+body{background:#fff!important;color:#000!important;margin:0!important;padding:0!important}
+body > *{display:none!important}
+#printWrapper{display:block!important;position:static!important;width:100%!important;background:#fff!important}
+#printHeader{border-bottom:2px solid #ff6b2b;padding-bottom:10px;margin-bottom:14px;}
+#printHeader img{max-height:55px;max-width:160px;object-fit:contain;vertical-align:middle}
+#printHeader div{display:inline-block;vertical-align:middle;margin-left:14px}
+#printHeader .ph-company{font-size:13pt;font-weight:700;color:#0d1b2e}
+#printHeader .ph-sub{font-size:8pt;color:#7a91b0}
+#expertResult{display:block!important;border:none!important;background:#fff!important;color:#000!important;padding:0!important;margin:0!important}
+.btn-group{display:none!important}
+.profit-box{background:#d1fae5!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.pb-lbl,#netProfit{color:#065f46!important}
+#expertBreakdown{background:#f0fdf4!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.rl{color:#334155!important}.rv{color:#0f172a!important}
+.result-top{color:#000!important}
+}
 .btn-coffee-calc {
     display: flex;
     align-items: center;
@@ -614,15 +631,18 @@ footer{text-align:center;margin-top:65px;padding:32px;color:var(--muted);border-
     </div>
 </div>
 
-<!-- ── PRINT HEADER (widoczny tylko przy druku) ── -->
-<div id="printHeader" style="display:none;">
-    <div style="display:flex;align-items:center;gap:16px;">
-        <img id="printLogoImg" style="max-height:60px;max-width:180px;object-fit:contain;">
+<!-- ── PRINT WRAPPER (tylko przy druku) ── -->
+<div id="printWrapper" style="display:none;">
+<div id="printHeader">
+    <div style="display:flex;align-items:center;gap:14px;padding-bottom:10px;border-bottom:2px solid #ff6b2b;margin-bottom:14px;">
+        <img id="printLogoImg" style="max-height:55px;max-width:160px;object-fit:contain;display:none;">
         <div>
-            <div id="printCompanyName" style="font-size:1rem;font-weight:700;color:#0d1b2e;"></div>
-            <div style="font-size:.72rem;color:#7a91b0;">Wycena grawerowania laserowego · LaserProfit.eu</div>
+            <div id="printCompanyName" class="ph-company" style="font-size:1rem;font-weight:700;color:#0d1b2e;"></div>
+            <div class="ph-sub" style="font-size:.72rem;color:#7a91b0;">Wycena grawerowania laserowego · LaserProfit.eu</div>
         </div>
     </div>
+</div>
+<div id="printResultCopy"></div>
 </div>
 </section>
 
@@ -1483,26 +1503,28 @@ function printWithLogo(){
     _logoCompany = company;
     localStorage.setItem('lp_company', company);
 
-    // Set print header
-    var ph = document.getElementById('printHeader');
     var pi = document.getElementById('printLogoImg');
     var pc = document.getElementById('printCompanyName');
+    var pw = document.getElementById('printWrapper');
+    var prc = document.getElementById('printResultCopy');
 
-    if(_logoDataURL){
-        pi.src = _logoDataURL;
-        pi.style.display = 'block';
-    } else {
-        pi.style.display = 'none';
-    }
+    if(_logoDataURL){ pi.src=_logoDataURL; pi.style.display='block'; }
+    else { pi.style.display='none'; }
     pc.textContent = company;
-    ph.style.display = 'block';
 
-    // Close modal and print
+    // Kopiuj zawartość raportu
+    var src = document.getElementById('expertResult');
+    prc.innerHTML = src.innerHTML;
+    prc.querySelectorAll('.btn-group,button').forEach(function(b){b.style.display='none';});
+
+    pw.style.display = 'block';
     closeLogoModal();
     setTimeout(function(){
         window.print();
-        // After print, re-hide header
-        setTimeout(function(){ ph.style.display = 'none'; }, 1000);
+        setTimeout(function(){
+            pw.style.display = 'none';
+            prc.innerHTML = '';
+        }, 1000);
     }, 300);
 }
 
