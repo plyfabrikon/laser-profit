@@ -302,17 +302,27 @@ setInterval(function(){var n=new Date();document.getElementById("clk").textConte
 // MAPA
 function initMap(lt,ln){
   if(mapObj)return;
+  // Uzywamy ESRI jako baza + RainViewer jako overlay
+  // maxNativeZoom:7 = kafelki radaru do zoom 7, ale mapa moze byc bardziej przyblizona
   mapObj=L.map("map",{zoomControl:true,attributionControl:false}).setView([lt,ln],7);
-  // ESRI World Street Map - calkowicie darmowy, bez klucza, bez blokad
   L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",{
-    maxZoom:7, minZoom:1
+    maxZoom:14, minZoom:1
   }).addTo(mapObj);
+
+  // Warstwa chmur satelitarnych z RainViewer (satellite)
+  satLyr=L.tileLayer("https://tilecache.rainviewer.com/v2/satellite/nowcast/256/{z}/{x}/{y}/0/1_1.png",{
+    opacity:0.6, tileSize:256, maxNativeZoom:7, maxZoom:14
+  });
+
   var ic=L.divIcon({className:"",html:"<div class='gpin'><div class='gpin-r'></div><div class='gpin-c'></div></div>",iconSize:[16,16],iconAnchor:[8,8]});
   gpsMkr=L.marker([lt,ln],{icon:ic,zIndexOffset:1000}).addTo(mapObj);
   setTimeout(function(){mapObj.invalidateSize();},300);
   loadRV();
+  // Domyslnie pokazuj chmury satelitarne od razu
+  setTimeout(function(){if(satLyr)satLyr.addTo(mapObj);},1000);
 }
 function rc(){if(mapObj&&uLat)mapObj.setView([uLat,uLon],10);}
+var satLyr=null;
 function loadRV(){
   if(!mapObj)return;
   fetch("https://api.rainviewer.com/public/weather-maps.json")
@@ -323,38 +333,37 @@ function loadRV(){
     var l=f[f.length-1];
     var host=d.host||"https://tilecache.rainviewer.com";
     if(rvLyr)mapObj.removeLayer(rvLyr);
-    // Oficjalny format z GitHub RainViewer: host + path + /512/{z}/{x}/{y}/2/1_1.png
-    // maxZoom:7 - limit RainViewer, tileSize:512
+    // maxNativeZoom:7 = radar dziala do zoom 7, powyzej skaluje kafle bez bledow
     rvLyr=L.tileLayer(host+l.path+"/512/{z}/{x}/{y}/2/1_1.png",{
-      opacity:0.75,
-      tileSize:512,
-      zoomOffset:-1
+      opacity:0.75, tileSize:512, zoomOffset:-1,
+      maxNativeZoom:6, maxZoom:14
     }).addTo(mapObj);
     var t=new Date(l.time*1000);
     document.getElementById("mbadge").textContent="RADAR "+pd(t.getHours())+":"+pd(t.getMinutes());
-  }).catch(function(){document.getElementById("mbadge").textContent="RADAR - brak danych";});
-}
+  }).catch(function(){document.getElementById("mbadge").textContent="RADAR - brak";});
 }
 setInterval(loadRV,300000);
 var extraLyr=null;
 function setL(n){
   ["r","c","w","t"].forEach(function(x){var e=document.getElementById("lb-"+x);if(e)e.classList.remove("ac");});
   var b=document.getElementById("lb-"+n);if(b)b.classList.add("ac");
-  // Usun dodatkowa warstwe
   if(extraLyr){mapObj.removeLayer(extraLyr);extraLyr=null;}
+  if(rvLyr&&mapObj.hasLayer(rvLyr))mapObj.removeLayer(rvLyr);
+  if(satLyr&&mapObj.hasLayer(satLyr))mapObj.removeLayer(satLyr);
   if(n==="r"){
-    if(rvLyr&&!mapObj.hasLayer(rvLyr))rvLyr.addTo(mapObj);
+    if(rvLyr)rvLyr.addTo(mapObj);
     document.getElementById("mbadge").textContent="RADAR - RainViewer";
-  } else {
-    if(rvLyr&&mapObj.hasLayer(rvLyr))mapObj.removeLayer(rvLyr);
-    // OpenWeatherMap darmowe kafelki (bez klucza dla podstawowych)
-    var urls={
-      c:"https://tile.openweathermap.org/map/clouds_new/{z}/{x}/{y}.png?appid=demo",
-      w:"https://tile.openweathermap.org/map/wind_new/{z}/{x}/{y}.png?appid=demo",
-      t:"https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=demo"
-    };
-    // Bez klucza pokazujemy info
-    document.getElementById("mbadge").textContent=(n==="c"?"CHMURY":n==="w"?"WIATR":"TEMP")+" (klucz OWM wymagany)";
+  } else if(n==="c"){
+    // Chmury satelitarne z RainViewer - tak jak Windy
+    if(satLyr)satLyr.addTo(mapObj);
+    if(rvLyr)rvLyr.addTo(mapObj);
+    document.getElementById("mbadge").textContent="CHMURY + RADAR";
+  } else if(n==="w"){
+    // Wiatr - warstwa z open-meteo tiles
+    extraLyr=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",{opacity:0.5,maxNativeZoom:7,maxZoom:14});
+    document.getElementById("mbadge").textContent="WIATR (dane w panelu)";
+  } else if(n==="t"){
+    document.getElementById("mbadge").textContent="TEMPERATURA (dane w panelu)";
   }
 }
 
@@ -370,7 +379,7 @@ function startGPS(){
     document.getElementById("l-acc").textContent="+-"+Math.round(pos.coords.accuracy)+"m";
     document.getElementById("l-alt").textContent=pos.coords.altitude?Math.round(pos.coords.altitude)+"m":"---";
     pi("p-gps","ok","GPS OK");
-    if(mapObj){mapObj.setView([uLat,uLon],11);gpsMkr.setLatLng([uLat,uLon]);}
+    if(mapObj){mapObj.setView([uLat,uLon],7);gpsMkr.setLatLng([uLat,uLon]);}
     geo(uLat,uLon); fetchWx(uLat,uLon);
   },function(){pi("p-gps","wn","GPS brak");},{enableHighAccuracy:true,timeout:10000});
 }
