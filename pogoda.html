@@ -285,7 +285,7 @@ body{background:#060d18;color:#dff0ff;font-family:Arial,sans-serif;font-size:14p
 
 <script>
 // Leaflet jest juz zaladowany w head synchronicznie
-var uLat=null,uLon=null,mapObj=null,gpsMkr=null,rvLyr=null,lMk=[],lIt=null,pT=null,pP=null;
+var uLat=null,uLon=null,mapObj=null,gpsMkr=null,rvLyr=null,lMk=[],lIt=null,pT=null,pP=null,gpsHadFix=false;
 var DAYS=["ND","PN","WT","SR","CZW","PT","SOB"];
 var DIRS=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
 var HC=[{l:"<5mm",c:"#64b5f6"},{l:"5-10",c:"#29d4ff"},{l:"10-20",c:"#1fde8a"},{l:"20-30",c:"#ffaa00"},{l:"30-50",c:"#ff6b35"},{l:">50",c:"#ff3a3a"}];
@@ -302,35 +302,31 @@ function we(c){if(c===0)return"&#9728;";if(c<=2)return"&#127780;";if(c<=3)return
 setInterval(function(){var n=new Date();document.getElementById("clk").textContent=pd(n.getUTCHours())+":"+pd(n.getUTCMinutes())+" UTC";},1000);
 
 // MAPA
+var OWM_KEY="f65b3018ded1baf5c48413dbd6703953";
 var satLyr=null, rvLyr=null, extraLyr=null, blitzWS=null, blitzMarkers=[];
 
 function initMap(lt,ln){
   if(mapObj)return;
   mapObj=L.map("map",{zoomControl:true,attributionControl:false}).setView([lt,ln],6);
   L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",{
-    maxZoom:14, minZoom:1
+    maxZoom:12, minZoom:1
   }).addTo(mapObj);
 
-  // Chmury satelitarne EUMETSAT - najlepsza darmowa opcja (Mercator/NASA WorldView)
-  // Uzywamy RainViewer satellite infrared - to samo co Windy.com
-  satLyr=L.tileLayer("https://tilecache.rainviewer.com/v2/satellite/infrared/256/{z}/{x}/{y}/0/0_0.png",{
-    opacity:0.7, tileSize:256, maxNativeZoom:6, maxZoom:14, zIndex:2
+  // Chmury OWM clouds_new - najlepsza darmowa z kluczem
+  satLyr=L.tileLayer("https://tile.openweathermap.org/map/clouds_new/{z}/{x}/{y}.png?appid="+OWM_KEY,{
+    opacity:0.85, maxNativeZoom:12, maxZoom:12, zIndex:2, tileSize:256
   });
 
-  var ic=L.divIcon({className:"",html:"<div class='gpin'><div class='gpin-r'></div><div class='gpin-c'></div></div>",iconSize:[16,16],iconAnchor:[8,8]});
+  var ic=L.divIcon({className:"",html:"<div class=\'gpin\'><div class=\'gpin-r\'></div><div class=\'gpin-c\'></div></div>",iconSize:[16,16],iconAnchor:[8,8]});
   gpsMkr=L.marker([lt,ln],{icon:ic,zIndexOffset:1000}).addTo(mapObj);
   setTimeout(function(){mapObj.invalidateSize();},300);
-
-  // Laduj radar i chmury domyslnie
   loadRV();
-  setTimeout(function(){
-    setL('c'); // domyslnie: chmury + radar
-  },1200);
+  setupMapClick();
+  setTimeout(function(){ setL("c"); },1200);
 }
 
 function rc(){if(mapObj&&uLat)mapObj.setView([uLat,uLon],7);}
 
-// RESIZE
 var mapBig=false;
 document.addEventListener("DOMContentLoaded",function(){
   var btn=document.getElementById("mresize-btn");
@@ -343,7 +339,6 @@ document.addEventListener("DOMContentLoaded",function(){
   });
 });
 
-// RADAR (RainViewer)
 function loadRV(){
   if(!mapObj)return;
   fetch("https://api.rainviewer.com/public/weather-maps.json")
@@ -357,43 +352,38 @@ function loadRV(){
     if(rvLyr)mapObj.removeLayer(rvLyr);
     rvLyr=L.tileLayer(host+l.path+"/512/{z}/{x}/{y}/2/1_1.png",{
       opacity:0.8, tileSize:512, zoomOffset:-1,
-      maxNativeZoom:6, maxZoom:14, zIndex:3
+      maxNativeZoom:6, maxZoom:12, zIndex:3
     });
-    if(wasOn||!satLyr)rvLyr.addTo(mapObj);
+    if(wasOn)rvLyr.addTo(mapObj);
     var t=new Date(l.time*1000);
     document.getElementById("mbadge").textContent="RADAR "+pd(t.getHours())+":"+pd(t.getMinutes())+" UTC";
   }).catch(function(){});
 }
 setInterval(loadRV,300000);
 
-// BLITZORTUNG - bliskawice na zywo (WebSocket)
 function startBlitz(){
   if(blitzWS)return;
   try{
     blitzWS=new WebSocket("wss://ws1.blitzortung.org:7979/");
     blitzWS.onopen=function(){
-      blitzWS.send(JSON.stringify({west:-10,east:35,north:72,south:44})); // Europa
+      blitzWS.send(JSON.stringify({west:-15,east:40,north:72,south:35}));
     };
     blitzWS.onmessage=function(e){
       try{
         var d=JSON.parse(e.data);
         if(!d.lat||!mapObj)return;
-        var lt2=d.lat, ln2=d.lon;
-        // Animowany marker blyskawicy
         var ic=L.divIcon({
           className:"",
-          html:"<div style='width:10px;height:10px;background:#ffe033;border-radius:50%;box-shadow:0 0 8px 3px rgba(255,224,51,0.9);animation:lf 2s forwards'></div>",
+          html:"<div style=\'width:10px;height:10px;background:#ffe033;border-radius:50%;box-shadow:0 0 8px 4px rgba(255,224,51,0.95)\'></div>",
           iconSize:[10,10],iconAnchor:[5,5]
         });
-        var m=L.marker([lt2,ln2],{icon:ic,zIndexOffset:900}).addTo(mapObj);
+        var m=L.marker([d.lat,d.lon],{icon:ic,zIndexOffset:900}).addTo(mapObj);
         blitzMarkers.push(m);
         setTimeout(function(){try{mapObj.removeLayer(m);}catch(x){}},4000);
-        // Max 150 markerow
-        if(blitzMarkers.length>150){
-          var old=blitzMarkers.splice(0,30);
+        if(blitzMarkers.length>200){
+          var old=blitzMarkers.splice(0,50);
           old.forEach(function(mk){try{mapObj.removeLayer(mk);}catch(x){}});
         }
-        // Aktualizuj licznik
         var cnt=parseInt(document.getElementById("lgnt-cnt").textContent)||0;
         document.getElementById("lgnt-cnt").textContent=cnt+1;
       }catch(x){}
@@ -403,74 +393,143 @@ function startBlitz(){
   }catch(x){blitzWS=null;}
 }
 
-// WARSTWY MAP
 function setL(n){
   ["r","c","w","t"].forEach(function(x){
-    var e=document.getElementById("lb-"+x);
-    if(e)e.classList.remove("ac");
+    var e=document.getElementById("lb-"+x);if(e)e.classList.remove("ac");
   });
-  var b=document.getElementById("lb-"+n);
-  if(b)b.classList.add("ac");
-
-  // Ukryj wszystkie warstwy
+  var b=document.getElementById("lb-"+n);if(b)b.classList.add("ac");
   if(rvLyr&&mapObj.hasLayer(rvLyr))mapObj.removeLayer(rvLyr);
   if(satLyr&&mapObj.hasLayer(satLyr))mapObj.removeLayer(satLyr);
   if(extraLyr){mapObj.removeLayer(extraLyr);extraLyr=null;}
 
   if(n==="r"){
-    // Tylko radar opadow
-    if(rvLyr)rvLyr.addTo(mapObj);
+    loadRV();
+    setTimeout(function(){if(rvLyr)rvLyr.addTo(mapObj);},700);
     document.getElementById("mbadge").textContent="RADAR OPADOW - RainViewer";
 
   }else if(n==="c"){
-    // Chmury satelitarne (podczerwien) + radar opadow + chmury OWM
     if(satLyr)satLyr.addTo(mapObj);
-    // Warstwa opadow OWM na wierzchu
-    extraLyr=L.tileLayer("https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png?appid=f65b3018ded1baf5c48413dbd6703953",{
-      opacity:0.6, maxNativeZoom:7, maxZoom:14, zIndex:3
-    });
-    extraLyr.addTo(mapObj);
-    if(rvLyr)rvLyr.addTo(mapObj);
-    document.getElementById("mbadge").textContent="CHMURY SATELITARNE + RADAR + OWM";
+    loadRV();
+    setTimeout(function(){if(rvLyr)rvLyr.addTo(mapObj);},700);
+    document.getElementById("mbadge").textContent="CHMURY (OWM) + RADAR";
 
   }else if(n==="w"){
-    // Wiatr - warstwa z OpenWeatherMap (wymaga klucza) - pokazujemy alternatywe
-    // Uzywamy Windy tiles publicznie dostepnych
-    extraLyr=L.tileLayer("https://tile.openweathermap.org/map/wind_new/{z}/{x}/{y}.png?appid=f65b3018ded1baf5c48413dbd6703953",{
-      opacity:0.7, maxNativeZoom:7, maxZoom:14, zIndex:3
+    if(satLyr)satLyr.addTo(mapObj);
+    extraLyr=L.tileLayer("https://tile.openweathermap.org/map/wind_new/{z}/{x}/{y}.png?appid="+OWM_KEY,{
+      opacity:0.85, maxNativeZoom:12, maxZoom:12, zIndex:4, tileSize:256
     });
     extraLyr.addTo(mapObj);
-    if(satLyr)satLyr.addTo(mapObj);
-    document.getElementById("mbadge").textContent="WIATR - OpenWeatherMap";
+    document.getElementById("mbadge").textContent="WIATR - OWM";
 
   }else if(n==="t"){
-    // Temperatura
-    extraLyr=L.tileLayer("https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid=f65b3018ded1baf5c48413dbd6703953",{
-      opacity:0.7, maxNativeZoom:7, maxZoom:14, zIndex:3
+    extraLyr=L.tileLayer("https://tile.openweathermap.org/map/temp_new/{z}/{x}/{y}.png?appid="+OWM_KEY,{
+      opacity:0.85, maxNativeZoom:12, maxZoom:12, zIndex:4, tileSize:256
     });
     extraLyr.addTo(mapObj);
-    document.getElementById("mbadge").textContent="TEMPERATURA - OpenWeatherMap";
+    document.getElementById("mbadge").textContent="TEMPERATURA - OWM";
   }
 }
 
-// GPS
+// GPS - ciagla obserwacja + znacznik lokalizacji zawsze aktywny
+var gpsWatch=null;
+var clickMkr=null; // marker klikniecia na mapie
+
 function startGPS(){
   initMap(52.2297,21.0122);
   fetchWx(52.2297,21.0122);
-  startBlitz(); // zacznij odzbirac bliskawice od razu
-  if(!navigator.geolocation)return;
-  navigator.geolocation.getCurrentPosition(function(pos){
-    uLat=pos.coords.latitude; uLon=pos.coords.longitude;
-    document.getElementById("l-lat").textContent=uLat.toFixed(4)+"N";
-    document.getElementById("l-lon").textContent=uLon.toFixed(4)+"E";
-    document.getElementById("l-acc").textContent="+-"+Math.round(pos.coords.accuracy)+"m";
-    document.getElementById("l-alt").textContent=pos.coords.altitude?Math.round(pos.coords.altitude)+"m":"---";
-    pi("p-gps","ok","GPS OK");
-    if(mapObj){mapObj.setView([uLat,uLon],7);gpsMkr.setLatLng([uLat,uLon]);}
-    geo(uLat,uLon); fetchWx(uLat,uLon);
-    startBlitz();
-  },function(){pi("p-gps","wn","GPS brak");},{enableHighAccuracy:true,timeout:10000});
+  startBlitz();
+
+  if(!navigator.geolocation){ pi("p-gps","wn","GPS brak"); return; }
+
+  // Pierwsze szybkie pobranie
+  navigator.geolocation.getCurrentPosition(onGPSPos, function(){
+    pi("p-gps","wn","GPS brak");
+  },{enableHighAccuracy:true, timeout:12000});
+
+  // Ciagla obserwacja - aktualizuje pozycje na biezaco
+  gpsWatch=navigator.geolocation.watchPosition(onGPSPos, function(){
+    pi("p-gps","wn","GPS niedostepny");
+  },{enableHighAccuracy:true, maximumAge:10000});
 }
+
+function onGPSPos(pos){
+  uLat=pos.coords.latitude;
+  uLon=pos.coords.longitude;
+  var acc=Math.round(pos.coords.accuracy);
+  document.getElementById("l-lat").textContent=uLat.toFixed(5)+"N";
+  document.getElementById("l-lon").textContent=uLon.toFixed(5)+"E";
+  document.getElementById("l-acc").textContent="+-"+acc+"m";
+  document.getElementById("l-alt").textContent=pos.coords.altitude?Math.round(pos.coords.altitude)+"m":"---";
+  pi("p-gps","ok","GPS OK +-"+acc+"m");
+  if(mapObj){
+    gpsMkr.setLatLng([uLat,uLon]);
+    // Centruj mape na GPS tylko przy pierwszym pobraniu
+    if(!gpsHadFix){ mapObj.setView([uLat,uLon],7); gpsHadFix=true; }
+  }
+  geo(uLat,uLon);
+  fetchWx(uLat,uLon);
+}
+
+// PODWOJNE KLIKNIECIE NA MAPIE - pogoda dla dowolnego miejsca
+function setupMapClick(){
+  if(!mapObj)return;
+  mapObj.on("dblclick", function(e){
+    var lt=e.latlng.lat, ln=e.latlng.lng;
+
+    // Usun stary marker klikniecia
+    if(clickMkr)mapObj.removeLayer(clickMkr);
+
+    // Dodaj marker z animacja
+    clickMkr=L.marker([lt,ln],{
+      icon:L.divIcon({
+        className:"",
+        html:"<div style='width:14px;height:14px;background:#ff3a3a;border:2px solid #fff;border-radius:50%;box-shadow:0 0 10px rgba(255,58,58,0.8)'></div>",
+        iconSize:[14,14],iconAnchor:[7,7]
+      }),
+      zIndexOffset:999
+    }).addTo(mapObj);
+
+    // Popup z info ladowania
+    clickMkr.bindPopup("<b style='color:#29d4ff'>Pobieranie danych...</b><br><small>"+lt.toFixed(4)+"N, "+ln.toFixed(4)+"E</small>").openPopup();
+
+    // Pobierz pogode dla klikniecia miejsca
+    fetchWxForPoint(lt, ln);
+
+    // Geokodowanie miejsca
+    fetch("https://nominatim.openstreetmap.org/reverse?lat="+lt+"&lon="+ln+"&format=json&zoom=14&addressdetails=1",{headers:{"Accept-Language":"pl"}})
+    .then(function(r){return r.json();})
+    .then(function(d){
+      var a=d.address||{};
+      var name=a.city||a.town||a.village||a.hamlet||a.county||a.country||"Nieznane miejsce";
+      var road=a.road?a.road+", ":"";
+      clickMkr.setPopupContent(
+        "<b style='color:#29d4ff;font-size:.9rem'>"+name+"</b><br>"+
+        "<span style='color:#5a8aaa;font-size:.75rem'>"+road+lt.toFixed(4)+"N, "+ln.toFixed(4)+"E</span><br>"+
+        "<span style='color:#ffe033;font-size:.7rem'>Dane w panelu ponizej</span>"
+      );
+    }).catch(function(){});
+  });
+}
+
+// Pobierz pogode dla punktu z mapy (aktualizuje panel)
+function fetchWxForPoint(lt,ln){
+  pi("p-dat","wn","PUNKT...");
+  fetch("https://api.open-meteo.com/v1/forecast?latitude="+lt+"&longitude="+ln
+    +"&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cloud_cover,visibility,dew_point_2m"
+    +"&hourly=cape,lifted_index,cloud_cover_low,cloud_cover_mid,cloud_cover_high"
+    +"&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max"
+    +"&wind_speed_unit=kmh&timezone=auto&forecast_days=7")
+  .then(function(r){return r.json();})
+  .then(function(d){
+    updAll(d);
+    pi("p-dat","ok","PUNKT LIVE");
+    document.getElementById("upd").textContent="klik "+pd(new Date().getHours())+":"+pd(new Date().getMinutes());
+    // Podswietl ze dane sa dla klikniecia
+    var box=document.getElementById("l-city");
+    if(box&&box.textContent!="---") box.style.color="#ffaa00";
+  }).catch(function(){pi("p-dat","wn","BLAD");});
+}
+
 
 function geo(lt,ln){
   fetch("https://nominatim.openstreetmap.org/reverse?lat="+lt+"&lon="+ln+"&format=json&zoom=18&addressdetails=1",{headers:{"Accept-Language":"pl"}})
