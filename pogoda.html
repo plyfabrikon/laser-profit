@@ -29,13 +29,14 @@ body{background:#060d18;color:#dff0ff;font-family:Arial,sans-serif;font-size:14p
 .sl::after{content:"";flex:1;height:1px;background:#1e3a55}
 
 /* MAPA */
-#mapbox{position:relative;height:280px;margin:0 12px;border:1px solid #1e3a55;border-radius:8px;overflow:hidden;background:#e8f4f8}
-#map{width:100%;height:280px}
+#mapbox{position:relative;height:500px;margin:0 12px;border:1px solid #1e3a55;border-radius:8px;overflow:hidden;background:#e8f4f8;resize:vertical;min-height:300px;max-height:90vh}
+#map{width:100%;height:100%}
 .mbtns{position:absolute;top:8px;left:8px;z-index:500;display:flex;flex-direction:column;gap:4px}
 .mb2{background:rgba(6,13,24,.9);border:1px solid #1e3a55;color:#dff0ff;font-size:.6rem;padding:5px 8px;border-radius:4px;cursor:pointer}
 .mb2.ac{background:#29d4ff;color:#060d18;font-weight:700}
 .mbadge{position:absolute;bottom:8px;left:8px;z-index:500;font-size:.58rem;color:#29d4ff;background:rgba(6,13,24,.85);border:1px solid #1e3a55;padding:3px 7px;border-radius:4px}
-.mrecenter{position:absolute;bottom:8px;right:8px;z-index:500;background:#29d4ff;color:#060d18;border:none;width:34px;height:34px;border-radius:50%;font-size:1rem;cursor:pointer}
+.mrecenter{position:absolute;bottom:8px;right:50px;z-index:500;background:#29d4ff;color:#060d18;border:none;width:34px;height:34px;border-radius:50%;font-size:1rem;cursor:pointer}
+.mresize{position:absolute;bottom:8px;right:8px;z-index:500;background:#1e3a55;color:#dff0ff;border:none;width:34px;height:34px;border-radius:50%;font-size:1rem;cursor:ns-resize;display:flex;align-items:center;justify-content:center}
 
 /* GPS pulsujacy */
 .gpin{width:16px;height:16px;position:relative}
@@ -164,12 +165,13 @@ body{background:#060d18;color:#dff0ff;font-family:Arial,sans-serif;font-size:14p
   <div id="map"></div>
   <div class="mbtns">
     <button class="mb2 ac" id="lb-r" onclick="setL('r')">RADAR</button>
-    <button class="mb2"    id="lb-c" onclick="setL('c')">CHMURY</button>
+    <button class="mb2"    id="lb-c" onclick="setL('c')">CHMURY+RADAR</button>
     <button class="mb2"    id="lb-w" onclick="setL('w')">WIATR</button>
     <button class="mb2"    id="lb-t" onclick="setL('t')">TEMP</button>
   </div>
   <div class="mbadge" id="mbadge">RADAR...</div>
-  <button class="mrecenter" onclick="rc()">&#x25CE;</button>
+  <button class="mrecenter" onclick="rc()" title="Moja pozycja">&#x25CE;</button>
+  <button class="mresize" id="mresize-btn" title="Powieksz/zmniejsz mape">&#x2195;</button>
 </div>
 
 <div class="s" style="margin-top:12px"><div class="sl">TWOJA LOKALIZACJA</div>
@@ -302,26 +304,39 @@ setInterval(function(){var n=new Date();document.getElementById("clk").textConte
 // MAPA
 function initMap(lt,ln){
   if(mapObj)return;
-  // Uzywamy ESRI jako baza + RainViewer jako overlay
-  // maxNativeZoom:7 = kafelki radaru do zoom 7, ale mapa moze byc bardziej przyblizona
   mapObj=L.map("map",{zoomControl:true,attributionControl:false}).setView([lt,ln],7);
   L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",{
     maxZoom:14, minZoom:1
   }).addTo(mapObj);
 
-  // Warstwa chmur satelitarnych z RainViewer (satellite)
-  satLyr=L.tileLayer("https://tilecache.rainviewer.com/v2/satellite/nowcast/256/{z}/{x}/{y}/0/1_1.png",{
-    opacity:0.6, tileSize:256, maxNativeZoom:7, maxZoom:14
+  // Chmury satelitarne - publiczny endpoint EUMETSAT przez RainViewer
+  satLyr=L.tileLayer("https://tilecache.rainviewer.com/v2/satellite/infrared/256/{z}/{x}/{y}/0/0_0.png",{
+    opacity:0.5, tileSize:256, maxNativeZoom:7, maxZoom:14
   });
 
   var ic=L.divIcon({className:"",html:"<div class='gpin'><div class='gpin-r'></div><div class='gpin-c'></div></div>",iconSize:[16,16],iconAnchor:[8,8]});
   gpsMkr=L.marker([lt,ln],{icon:ic,zIndexOffset:1000}).addTo(mapObj);
   setTimeout(function(){mapObj.invalidateSize();},300);
   loadRV();
-  // Domyslnie pokazuj chmury satelitarne od razu
-  setTimeout(function(){if(satLyr)satLyr.addTo(mapObj);},1000);
+  // Domyslnie: radar + chmury od razu
+  setTimeout(function(){
+    if(satLyr)satLyr.addTo(mapObj);
+  },1500);
 }
-function rc(){if(mapObj&&uLat)mapObj.setView([uLat,uLon],10);}
+function rc(){if(mapObj&&uLat)mapObj.setView([uLat,uLon],7);}
+
+// RESIZE MAPY
+var mapBig=false;
+document.addEventListener("DOMContentLoaded",function(){
+  var btn=document.getElementById("mresize-btn");
+  if(btn) btn.addEventListener("click",function(){
+    var box=document.getElementById("mapbox");
+    mapBig=!mapBig;
+    box.style.height=mapBig?"80vh":"500px";
+    setTimeout(function(){if(mapObj)mapObj.invalidateSize();},100);
+    btn.innerHTML=mapBig?"&#x2B06;":"&#x2195;";
+  });
+});
 var satLyr=null;
 function loadRV(){
   if(!mapObj)return;
