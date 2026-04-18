@@ -30,7 +30,7 @@ body{background:#060d18;color:#dff0ff;font-family:Arial,sans-serif;font-size:14p
 
 /* MAPA */
 #mapbox{position:relative;height:500px;margin:0 12px;border:1px solid #1e3a55;border-radius:8px;overflow:hidden;background:#e8f4f8;resize:vertical;min-height:300px;max-height:90vh}
-#map{width:100%;height:100%}
+#map{width:100%;height:500px}
 .mbtns{position:absolute;top:8px;left:8px;z-index:500;display:flex;flex-direction:column;gap:4px}
 .mb2{background:rgba(6,13,24,.9);border:1px solid #1e3a55;color:#dff0ff;font-size:.6rem;padding:5px 8px;border-radius:4px;cursor:pointer}
 .mb2.ac{background:#29d4ff;color:#060d18;font-weight:700}
@@ -184,6 +184,20 @@ body{background:#060d18;color:#dff0ff;font-family:Arial,sans-serif;font-size:14p
     <button class="mb2"    id="lb-t" onclick="setL('t')">TEMP</button>
   </div>
   <div class="mbadge" id="mbadge">RADAR...</div>
+  <!-- Licznik wyladowan widocznych na mapie -->
+  <div id="blitz-map-counter" style="
+    position:absolute;bottom:48px;left:8px;z-index:500;
+    background:rgba(6,13,24,0.88);border:1px solid rgba(255,224,51,0.5);
+    border-radius:6px;padding:5px 10px;pointer-events:none;
+    display:flex;flex-direction:column;align-items:center;gap:1px;">
+    <div style="font-family:monospace;font-size:1.4rem;font-weight:700;color:#ffe033;line-height:1" id="blitz-view-count">0</div>
+    <div style="font-family:monospace;font-size:0.55rem;color:#5a8aaa;letter-spacing:1px">BŁK W WIDOKU</div>
+    <div style="display:flex;gap:4px;margin-top:3px;font-size:0.5rem;font-family:monospace">
+      <span style="color:#ff0000">●0-5min</span>
+      <span style="color:#ff8800">●5-10</span>
+      <span style="color:#ffff00">●10-30</span>
+    </div>
+  </div>
   <button class="mrecenter" onclick="rc()" title="Moja pozycja">&#x25CE;</button>
   <button class="mresize" id="mresize-btn" title="Powieksz/zmniejsz mape">&#x2195;</button>
 </div>
@@ -365,6 +379,9 @@ function initMap(lt,ln){
   gpsMkr=L.marker([lt,ln],{icon:ic,zIndexOffset:1000}).addTo(mapObj);
   setTimeout(function(){mapObj.invalidateSize();},300);
 
+  // Aktualizuj licznik przy kazdym ruchu/zoomie mapy
+  mapObj.on("moveend zoomend", updateViewCounter);
+
   // Laduj radar I satelite z jednego API call
   loadRVandSat();
   setupMapClick();
@@ -458,54 +475,47 @@ function connectBlitz(servers, idx, tries) {
         };
         
         blitzWS.onmessage = function(e) {
-		
-try {
-var d = JSON.parse(e.data);
-if (!mapObj || typeof d.lat === "undefined") return;
+            try {
+                var d = JSON.parse(e.data);
+                if (!mapObj || typeof d.lat === "undefined") return;
 
-```
-    var now = Date.now();
+                // Blitzortung wysyla lat/lon w nanosekundach (np. 520000000)
+                // trzeba podzielic przez 1e9 aby uzyskac stopnie
+                var lt2 = d.lat / 1e9;
+                var ln2 = d.lon / 1e9;
 
-    // ŚWIEŻE = większe i czerwone
-    var m = L.circleMarker([d.lat, d.lon], {
-        radius: 8,
-        color: "#ff0000",
-        fillColor: "#ff0000",
-        fillOpacity: 1,
-        weight: 1
-    }).addTo(mapObj);
+                // Walidacja zakresu
+                if(isNaN(lt2)||isNaN(ln2)||Math.abs(lt2)>90||Math.abs(ln2)>180) return;
 
-    m.timestamp = now;
-    blitzMarkers.push(m);
+                var now = Date.now();
 
-    // licznik
-    var cntEl = document.getElementById("blk-counter");
-    if(cntEl){
-        var currentCnt = parseInt(cntEl.textContent) || 0;
-        cntEl.textContent = currentCnt + 1;
-    }
+                // SWIEŻE = większe i czerwone
+                var m = L.circleMarker([lt2, ln2], {
+                    radius: 8,
+                    color: "#ff0000",
+                    fillColor: "#ff0000",
+                    fillOpacity: 1,
+                    weight: 1
+                }).addTo(mapObj);
 
-} catch (err) { console.error("Blitz parsing error", err); }
-```
+                m.timestamp = now;
+                blitzMarkers.push(m);
 
-};
+                // Liczniki
+                var cntEl = document.getElementById("blk-counter");
+                if(cntEl){ cntEl.textContent = (parseInt(cntEl.textContent)||0) + 1; }
+                var cntEl2 = document.getElementById("lgnt-cnt");
+                if(cntEl2){ cntEl2.textContent = (parseInt(cntEl2.textContent)||0) + 1; }
 
-
-var m = L.circleMarker([d.lat, d.lon], {
-    radius: 6,
-    color: "#ff0000",
-    fillColor: "#ff0000",
-    fillOpacity: 1,
-    weight: 1
-}).addTo(mapObj);
-
-// zapis czasu
-m.timestamp = now;
-
-// dodaj do listy
-blitzMarkers.push(m);
+                // Aktualizuj licznik widoku natychmiast
+                updateViewCounter();
 
             } catch (err) { console.error("Blitz parsing error", err); }
+        };
+
+        blitzWS.onerror = function(e) {
+            console.warn("Blitzortung WS error:", e);
+            blitzWS = null;
         };
 
         blitzWS.onclose = function() {
@@ -520,69 +530,61 @@ blitzMarkers.push(m);
 var blitzPath = null;
 
 setInterval(function() {
-var now = Date.now();
-var points = [];
+    if(!mapObj) return;
+    var now = Date.now();
+    var points = [];
 
-```
-blitzMarkers.forEach(function(m) {
-    var age = (now - m.timestamp) / 1000;
+    blitzMarkers.forEach(function(m) {
+        var age = (now - m.timestamp) / 1000;
 
-    if (age <= 300) {
-        // 0–5 min
-        m.setStyle({
-            color: "#ff0000",
-            fillColor: "#ff0000",
-            fillOpacity: 1,
-            radius: 8
-        });
-    } else if (age <= 600) {
-        // 5–10 min
-        m.setStyle({
-            color: "#ff8800",
-            fillColor: "#ff8800",
-            fillOpacity: 0.8,
-            radius: 6
-        });
-    } else if (age <= 1800) {
-        // 10–30 min
-        m.setStyle({
-            color: "#ffff00",
-            fillColor: "#ffff00",
-            fillOpacity: 0.5,
-            radius: 4
-        });
-    } else {
-        if (mapObj.hasLayer(m)) {
-            mapObj.removeLayer(m);
+        if (age <= 300) {
+            // 0-5 min - czerwone, duże
+            m.setStyle({ color: "#ff0000", fillColor: "#ff0000", fillOpacity: 1, radius: 8 });
+        } else if (age <= 600) {
+            // 5-10 min - pomarańczowe
+            m.setStyle({ color: "#ff8800", fillColor: "#ff8800", fillOpacity: 0.8, radius: 6 });
+        } else if (age <= 1800) {
+            // 10-30 min - żółte, małe
+            m.setStyle({ color: "#ffff00", fillColor: "#ffff00", fillOpacity: 0.5, radius: 4 });
+        } else {
+            if (mapObj.hasLayer(m)) { mapObj.removeLayer(m); }
         }
+
+        if (age <= 1800) { points.push(m.getLatLng()); }
+    });
+
+    // Usuń stare z tablicy
+    blitzMarkers = blitzMarkers.filter(function(m) {
+        return (now - m.timestamp) <= 1800000;
+    });
+
+    // Rysowanie ścieżki burzy
+    if (blitzPath) { mapObj.removeLayer(blitzPath); blitzPath = null; }
+    if (points.length > 2) {
+        blitzPath = L.polyline(points, {
+            color: "#ffaa00", weight: 2, opacity: 0.6
+        }).addTo(mapObj);
     }
 
-    // do rysowania ścieżki
-    if (age <= 1800) {
-        points.push(m.getLatLng());
-    }
-});
-
-// usuń stare z tablicy
-blitzMarkers = blitzMarkers.filter(function(m) {
-    return (now - m.timestamp) <= 1800000;
-});
-
-// RYSOWANIE ŚCIEŻKI BURZY
-if (blitzPath) {
-    mapObj.removeLayer(blitzPath);
-}
-
-if (points.length > 2) {
-    blitzPath = L.polyline(points, {
-        color: "#ffaa00",
-        weight: 2,
-        opacity: 0.6
-    }).addTo(mapObj);
-}
-```
-
+    // Aktualizuj licznik widoku po każdym cyklu
+    updateViewCounter();
 }, 10000);
+
+// Licznik wyladowan widocznych w aktualnym widoku mapy
+function updateViewCounter(){
+    if(!mapObj) return;
+    var bounds = mapObj.getBounds();
+    var count = 0;
+    var now = Date.now();
+    blitzMarkers.forEach(function(m){
+        var age = (now - m.timestamp) / 1000;
+        if(age > 1800) return; // tylko ostatnie 30 min
+        var ll = m.getLatLng();
+        if(bounds.contains(ll)) count++;
+    });
+    var el = document.getElementById("blitz-view-count");
+    if(el) el.textContent = count;
+}
 
 function setL(n){
   ["r","c","w","t"].forEach(function(x){var e=document.getElementById("lb-"+x);if(e)e.classList.remove("ac");});
@@ -923,6 +925,21 @@ function updFC(d){
 
 // START - bez overlay, od razu
 window.onload = function(){ startGPS(); };
+
+// Sync #map height with resizable #mapbox
+window.addEventListener("load", function(){
+  var box = document.getElementById("mapbox");
+  var mapDiv = document.getElementById("map");
+  if(!box||!mapDiv) return;
+  if(window.ResizeObserver){
+    new ResizeObserver(function(entries){
+      for(var en of entries){
+        var h = en.contentRect.height;
+        if(h > 10){ mapDiv.style.height = h+"px"; if(typeof mapObj!=="undefined"&&mapObj) mapObj.invalidateSize(); }
+      }
+    }).observe(box);
+  }
+});
 </script>
 </body>
 </html>
