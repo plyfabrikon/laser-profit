@@ -339,6 +339,17 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
 /* ═══════════════════════════════════════════
    POPUP po kliknięciu w mapę
 ═══════════════════════════════════════════ */
+.storm-tooltip{
+  background:rgba(4,12,24,.95) !important;
+  border:1px solid var(--border) !important;
+  border-radius:6px !important;
+  color:var(--text) !important;
+  font-size:.72rem !important;
+  font-family:monospace !important;
+  box-shadow:0 2px 10px rgba(0,0,0,.6) !important;
+}
+.storm-tooltip::before{display:none !important}
+.leaflet-tooltip.storm-tooltip{padding:6px 10px !important}
 .leaflet-popup-content-wrapper{
   background:rgba(5,16,30,.96) !important;
   border:1px solid var(--border) !important;
@@ -369,6 +380,48 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
 ═══════════════════════════════════════════ */
 .section{display:none;flex:1;overflow:hidden;min-height:0}
 .section.active{display:flex}
+
+/* BURZE 72H */
+.burze-wrap{flex:1;display:flex;overflow:hidden;flex-direction:column}
+.burze-topbar{flex-shrink:0;background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.burze-body{flex:1;display:flex;overflow:hidden;min-height:0}
+.burze-left{width:320px;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.burze-right{flex:1;position:relative;overflow:hidden}
+#map-burze{width:100%;height:100%;background:#03080f}
+
+/* Suwak czasu */
+.time-slider-wrap{display:flex;align-items:center;gap:8px;flex:1;min-width:200px}
+.time-slider{-webkit-appearance:none;appearance:none;width:100%;height:4px;background:var(--border);border-radius:2px;outline:none;cursor:pointer}
+.time-slider::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid #fff;box-shadow:0 0 6px rgba(232,130,26,.6)}
+.time-label{font-size:.65rem;font-family:monospace;color:var(--accent);white-space:nowrap;min-width:120px;font-weight:700}
+.play-btn{background:var(--accent);border:none;color:#000;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.play-btn:hover{background:var(--accent2);transform:scale(1.1)}
+
+/* Panel lewej kolumny */
+.burze-info{padding:12px;flex:1;overflow-y:auto}
+.burze-info::-webkit-scrollbar{width:3px}
+.burze-info::-webkit-scrollbar-thumb{background:var(--border)}
+.storm-gauge{margin-bottom:14px}
+.storm-gauge-label{font-size:.6rem;color:var(--text2);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px}
+.storm-gauge-bar{height:12px;background:#0a1420;border-radius:6px;overflow:hidden;border:1px solid var(--border)}
+.storm-gauge-fill{height:100%;border-radius:6px;transition:width .8s ease,background .8s ease}
+.storm-gauge-val{font-size:.72rem;font-family:monospace;font-weight:700;margin-top:3px}
+.storm-params{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
+.storm-param{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:7px 8px}
+.storm-param-lbl{font-size:.52rem;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:2px}
+.storm-param-val{font-size:1rem;font-weight:700;color:#fff;font-family:monospace}
+.storm-legend{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+.storm-legend-row{display:flex;align-items:center;gap:8px;font-size:.62rem;color:var(--text2)}
+.storm-legend-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0}
+
+/* Status ładowania */
+.burze-loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:var(--text2);z-index:10;background:rgba(5,16,30,.9);padding:20px 30px;border-radius:10px;border:1px solid var(--border)}
+.burze-loading-spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Chart */
+.storm-chart-wrap{height:120px;position:relative;padding:8px 12px 0;border-top:1px solid var(--border)}
+.storm-chart-title{font-size:.55rem;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;padding:8px 12px 0}
 
 /* SAT24 - pełna mapa */
 .sat-wrap{flex:1;position:relative;overflow:hidden}
@@ -464,6 +517,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
     <div class="nav-item" data-sec="prognoza" onclick="showSec(this,'prognoza')">Prognoza</div>
     <div class="nav-item" data-sec="ostrzezenia" onclick="showSec(this,'ostrzezenia')">Ostrzeżenia</div>
     <div class="nav-item" data-sec="wyladowania" onclick="showSec(this,'wyladowania')">⚡ Wyładowania</div>
+    <div class="nav-item" data-sec="burze" onclick="showSec(this,'burze')">🌩 Burze 72h</div>
     <div class="nav-item" data-sec="wiatr" onclick="showSec(this,'wiatr')">Wiatr</div>
   </nav>
   <div class="nav-right">
@@ -764,6 +818,102 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
   </div>
 </div><!-- /sec-wyladowania -->
 
+<!-- ══════ SEKCJA: BURZE 72H ══════ -->
+<div class="section" id="sec-burze">
+  <div class="burze-wrap">
+
+    <!-- Topbar z suwakiem -->
+    <div class="burze-topbar">
+      <div style="font-size:.62rem;font-weight:700;letter-spacing:1.5px;color:var(--text2);text-transform:uppercase;white-space:nowrap">🌩 Prognoza burz 72h</div>
+      <div class="time-slider-wrap">
+        <button class="play-btn" id="burze-play-btn" onclick="toggleBurzeAnim()" title="Animuj">▶</button>
+        <input type="range" class="time-slider" id="burze-slider" min="0" max="71" value="0" oninput="onBurzeSlider(this.value)">
+        <div class="time-label" id="burze-time-label">Teraz</div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <span style="font-size:.58rem;color:var(--text2)">Dane:</span>
+        <span style="font-size:.58rem;color:var(--blue2);font-family:monospace" id="burze-update-time">--</span>
+        <button onclick="loadBurzeData(true)" style="font-size:.55rem;padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text2);cursor:pointer">🔄</button>
+      </div>
+    </div>
+
+    <div class="burze-body">
+      <!-- Lewa kolumna info -->
+      <div class="burze-left">
+        <!-- Wykres prawdopodobieństwa -->
+        <div class="storm-chart-title">📊 Prawdopodob. burzy — Twoja lokalizacja</div>
+        <div class="storm-chart-wrap"><canvas id="chart-storm"></canvas></div>
+
+        <div class="burze-info">
+          <!-- Główny wskaźnik -->
+          <div class="storm-gauge">
+            <div class="storm-gauge-label">Ryzyko burzowe</div>
+            <div class="storm-gauge-bar">
+              <div class="storm-gauge-fill" id="sg-fill" style="width:0%"></div>
+            </div>
+            <div class="storm-gauge-val" id="sg-val" style="color:#1fde8a">0% — Brak ryzyka</div>
+          </div>
+
+          <!-- Parametry -->
+          <div class="storm-params">
+            <div class="storm-param">
+              <div class="storm-param-lbl">CAPE</div>
+              <div class="storm-param-val" id="sp-cape">-- J/kg</div>
+            </div>
+            <div class="storm-param">
+              <div class="storm-param-lbl">Lifted Index</div>
+              <div class="storm-param-val" id="sp-li">--</div>
+            </div>
+            <div class="storm-param">
+              <div class="storm-param-lbl">CIN</div>
+              <div class="storm-param-val" id="sp-cin">-- J/kg</div>
+            </div>
+            <div class="storm-param">
+              <div class="storm-param-lbl">Opady</div>
+              <div class="storm-param-val" id="sp-prc">-- mm/h</div>
+            </div>
+            <div class="storm-param">
+              <div class="storm-param-lbl">Wind Shear</div>
+              <div class="storm-param-val" id="sp-shr">-- km/h</div>
+            </div>
+            <div class="storm-param">
+              <div class="storm-param-lbl">WMO kod</div>
+              <div class="storm-param-val" id="sp-wmo">--</div>
+            </div>
+          </div>
+
+          <!-- Legenda -->
+          <div style="font-size:.58rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Legenda mapy</div>
+          <div class="storm-legend">
+            <div class="storm-legend-row"><div class="storm-legend-dot" style="background:#1fde8a;box-shadow:0 0 6px #1fde8a"></div>0–20% Brak ryzyka</div>
+            <div class="storm-legend-row"><div class="storm-legend-dot" style="background:#ffe033;box-shadow:0 0 6px #ffe033"></div>20–40% Niskie ryzyko</div>
+            <div class="storm-legend-row"><div class="storm-legend-dot" style="background:#ff8800;box-shadow:0 0 6px #ff8800"></div>40–60% Umiarkowane</div>
+            <div class="storm-legend-row"><div class="storm-legend-dot" style="background:#ff3a3a;box-shadow:0 0 6px #ff3a3a"></div>60–80% Wysokie ⚡</div>
+            <div class="storm-legend-row"><div class="storm-legend-dot" style="background:#cc00ff;box-shadow:0 0 8px #cc00ff"></div>80–100% Ekstremalne ⚡⚡</div>
+          </div>
+
+          <div style="margin-top:12px;font-size:.58rem;color:var(--text2);line-height:1.6;border-top:1px solid var(--border);padding-top:8px">
+            Dane: <b style="color:var(--blue2)">Open-Meteo</b><br>
+            Parametry: CAPE, LI, CIN, WMO, opady, wind shear<br>
+            Aktualizacja: co 15 min<br>
+            Siatka: 40 punktów (~100km)
+          </div>
+        </div>
+      </div>
+
+      <!-- Mapa -->
+      <div class="burze-right">
+        <div id="map-burze"></div>
+        <div class="burze-loading" id="burze-loading">
+          <div class="burze-loading-spinner"></div>
+          <div style="font-size:.75rem">Pobieranie danych dla 40 punktów...</div>
+          <div style="font-size:.6rem;margin-top:4px;color:var(--text2)" id="burze-progress">0/40</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div><!-- /sec-burze -->
+
 <!-- ══════ SEKCJA: WIATR ══════ -->
 <div class="section" id="sec-wiatr">
   <div class="wiatr-wrap">
@@ -910,6 +1060,7 @@ function showSec(el,s){
     reloadBlitzIframe();
   }
   if(s==='prognoza')initPrognoza();
+  if(s==='burze'){initBurze();if(mapBurze)setTimeout(function(){mapBurze.invalidateSize();},100);}
   if(s==='ostrzezenia'){syncAlertPanel();if(!alertsLoaded)loadAlerts();}
   if(s==='wiatr')initWiatr();
   if(s==='aktualnosci'){syncNewsPanel();loadNews();}
@@ -1472,65 +1623,38 @@ function updateViewCounter(){
 
 function addBlitzMarker(lt,ln){ /* nieużywane */ }
 
+function buildWindyUrl(){
+  var lat=(uLat||52.0).toFixed(2);
+  var lon=(uLon||20.0).toFixed(2);
+  // Sprawdzony format embed.windy.com - parametry w ścieżce: lat,lon,zoom
+  return "https://embed.windy.com/embed2.html"
+    +"?lat="+lat+"&lon="+lon+"&zoom=5"
+    +"&level=surface&overlay=lightning"
+    +"&menu=&message=true&marker=&calendar=now"
+    +"&pressure=&type=map&location=coordinates"
+    +"&detail=&metricWind=km%2Fh&metricTemp=%C2%B0C"
+    +"&radarRange=-1";
+}
+
 function initBlitzIframe(){
   var box=document.getElementById("blitz-iframe-box");
   if(!box||box.dataset.init)return;
   box.dataset.init="1";
-  var lat=uLat||52.0, lon=uLon||20.0;
-  // Windy.com - oficjalny darmowy widget, pozwala na iframe,
-  // pokazuje wyładowania + radar + chmury satelitarne
-  var url="https://embed.windy.com/embed2.html"
-    +"?lat="+lat.toFixed(2)
-    +"&lon="+lon.toFixed(2)
-    +"&detailLat="+lat.toFixed(2)
-    +"&detailLon="+lon.toFixed(2)
-    +"&width=650&height=450"
-    +"&zoom=5"
-    +"&level=surface"
-    +"&overlay=lightning"
-    +"&product=ecmwf"
-    +"&menu=&message=true&marker=true"
-    +"&calendar=now&pressure=true"
-    +"&type=map&location=coordinates"
-    +"&detail=true&metricWind=km%2Fh&metricTemp=%C2%B0C"
-    +"&radarRange=-1";
   var iframe=document.createElement("iframe");
-  iframe.src=url;
+  iframe.src=buildWindyUrl();
   iframe.style.cssText="width:100%;height:100%;border:none;display:block";
-  iframe.allow="geolocation";
-  iframe.frameBorder="0";
+  iframe.allowFullscreen=true;
   box.innerHTML="";
   box.appendChild(iframe);
 }
 
 
 function reloadBlitzIframe(){
-  var lat=uLat||52.0, lon=uLon||20.0;
-  var url="https://embed.windy.com/embed2.html"
-    +"?lat="+lat.toFixed(2)
-    +"&lon="+lon.toFixed(2)
-    +"&detailLat="+lat.toFixed(2)
-    +"&detailLon="+lon.toFixed(2)
-    +"&width=650&height=450"
-    +"&zoom=5"
-    +"&level=surface"
-    +"&overlay=lightning"
-    +"&product=ecmwf"
-    +"&menu=&message=true&marker=true"
-    +"&calendar=now&pressure=true"
-    +"&type=map&location=coordinates"
-    +"&detail=true&metricWind=km%2Fh&metricTemp=%C2%B0C"
-    +"&radarRange=-1";
   var box=document.getElementById("blitz-iframe-box");
   if(!box)return;
-  var existing=box.querySelector("iframe");
-  if(existing){existing.src=url;return;}
-  var iframe=document.createElement("iframe");
-  iframe.src=url;
-  iframe.style.cssText="width:100%;height:100%;border:none;display:block";
-  iframe.allow="geolocation";
-  box.innerHTML="";
-  box.appendChild(iframe);
+  // Resetuj i załaduj od nowa z aktualną pozycją
+  box.dataset.init="";
+  initBlitzIframe();
 }
 
 
@@ -1809,6 +1933,394 @@ document.addEventListener("keydown",function(e){if(e.key==="Escape")closeFcModal
 // ═══════════════════════════════════════════
 // START
 // ═══════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════
+// SYSTEM PROGNOZ BURZOWYCH — 40 punktów, 72h, co 15min
+// ═══════════════════════════════════════════════════════════
+
+// Siatka 40 punktów Polski
+var STORM_GRID=[
+  [49.0,17.0],[49.0,18.5],[49.0,20.0],[49.0,21.5],[49.0,23.0],
+  [49.9,15.5],[49.9,17.0],[49.9,18.5],[49.9,20.0],[49.9,21.5],[49.9,23.0],
+  [50.8,15.5],[50.8,17.0],[50.8,18.5],[50.8,20.0],[50.8,21.5],[50.8,23.0],
+  [51.7,15.5],[51.7,17.0],[51.7,18.5],[51.7,20.0],[51.7,21.5],[51.7,23.0],
+  [52.6,15.5],[52.6,17.0],[52.6,18.5],[52.6,20.0],[52.6,21.5],[52.6,23.0],
+  [53.5,15.5],[53.5,17.0],[53.5,18.5],[53.5,20.0],[53.5,21.5],[53.5,23.0],
+  [54.4,17.0],[54.4,18.5],[54.4,20.0],[54.4,21.5],[54.4,23.0]
+];
+
+var burzeData=[];        // [pointIdx][hourIdx] = {prob,cape,li,cin,prc,shr,wmo}
+var burzeHourIdx=0;      // aktualny indeks godziny suwaka (0=teraz)
+var burzeHours=[];       // tablica timestampów ISO dla 72h
+var mapBurze=null;
+var burzeMarkers=[];     // Leaflet circles
+var burzeAnimInt=null;
+var burzeAnimRunning=false;
+var burzeInit=false;
+var burzeLoaded=false;
+var burzeChartInst=null;
+var burzeRefreshInt=null;
+
+// ── ALGORYTM PRAWDOPODOBIEŃSTWA BURZY ───────────────────────────────
+function calcStormProb(cape,li,cin,prc,wmo,shr){
+  var prob=0;
+
+  // CAPE (najważniejszy — waga 40%)
+  if(cape>3000)      prob+=40;
+  else if(cape>2000) prob+=32;
+  else if(cape>1500) prob+=24;
+  else if(cape>1000) prob+=16;
+  else if(cape>500)  prob+=8;
+  else if(cape>200)  prob+=3;
+
+  // Lifted Index (waga 25%)
+  if(li<-6)      prob+=25;
+  else if(li<-4) prob+=20;
+  else if(li<-2) prob+=14;
+  else if(li<0)  prob+=7;
+  else if(li<1)  prob+=2;
+
+  // WMO kod aktywnej burzy (waga 20%)
+  if(wmo>=95)    prob+=20;
+  else if(wmo>=80) prob+=10;
+  else if(wmo>=61) prob+=5;
+
+  // Opady konwekcyjne (waga 10%)
+  if(prc>10)     prob+=10;
+  else if(prc>5) prob+=7;
+  else if(prc>2) prob+=4;
+  else if(prc>0.5) prob+=2;
+
+  // CIN — hamowanie konwekcji (odejmuje)
+  if(cin<-200)   prob-=15;
+  else if(cin<-100) prob-=8;
+  else if(cin<-50)  prob-=3;
+
+  // Wind Shear — zwiększa ryzyko superceli (waga 5%)
+  if(shr>50)     prob+=5;
+  else if(shr>30) prob+=3;
+  else if(shr>15) prob+=1;
+
+  return Math.max(0, Math.min(100, Math.round(prob)));
+}
+
+// Kolor na podstawie prawdopodobieństwa
+function probToColor(p){
+  if(p>=80) return {fill:'#cc00ff',stroke:'#ff00ff',glow:'rgba(200,0,255,0.4)'};
+  if(p>=60) return {fill:'#ff2200',stroke:'#ff4400',glow:'rgba(255,50,0,0.4)'};
+  if(p>=40) return {fill:'#ff8800',stroke:'#ffaa00',glow:'rgba(255,140,0,0.35)'};
+  if(p>=20) return {fill:'#ffe033',stroke:'#ffcc00',glow:'rgba(255,220,50,0.3)'};
+  return     {fill:'#1fde8a',stroke:'#00cc66',glow:'rgba(31,220,138,0.2)'};
+}
+
+// ── INICJALIZACJA MAPY BURZE ─────────────────────────────────────────
+function initMapBurze(){
+  if(mapBurze)return;
+  var ctr=mapObj?mapObj.getCenter():{lat:52,lng:19};
+  var zm=mapObj?Math.min(mapObj.getZoom(),7):6;
+  mapBurze=L.map('map-burze',{
+    zoomControl:true,attributionControl:false,doubleClickZoom:false
+  }).setView([ctr.lat||ctr[0],ctr.lng||ctr[1]],zm);
+  // Ciemna mapa bazowa — najlepsza dla overlay burzowego
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    {maxZoom:10,subdomains:'abcd'}).addTo(mapBurze);
+  setTimeout(function(){mapBurze.invalidateSize();},200);
+}
+
+// ── POBIERANIE DANYCH ────────────────────────────────────────────────
+function loadBurzeData(force){
+  if(!burzeInit)return;
+  if(burzeLoaded&&!force)return;
+  document.getElementById('burze-loading').style.display='block';
+  burzeData=[];
+  var loaded=0;
+  var total=STORM_GRID.length;
+
+  STORM_GRID.forEach(function(pt,idx){
+    var lat=pt[0],lon=pt[1];
+    // Pobierz CAPE, LI, CIN, opady, WMO, wiatr na 72h (co 1h)
+    var url='https://api.open-meteo.com/v1/forecast'
+      +'?latitude='+lat+'&longitude='+lon
+      +'&hourly=cape,lifted_index,convective_inhibition,precipitation,'
+      +'weather_code,wind_speed_10m,wind_speed_850hPa'
+      +'&wind_speed_unit=kmh&timezone=Europe%2FWarsaw&forecast_days=3';
+
+    fetch(url)
+    .then(function(r){return r.json();})
+    .then(function(d){
+      var h=d.hourly||{};
+      var times=h.time||[];
+      var cape=h.cape||[];
+      var li=h.lifted_index||[];
+      var cin=h.convective_inhibition||[];
+      var prc=h.precipitation||[];
+      var wmo=h.weather_code||[];
+      var wsp=h.wind_speed_10m||[];
+      var wsp850=h.wind_speed_850hPa||[];
+
+      // Oblicz shear (różnica wiatru 10m vs 850hPa)
+      var pointData=[];
+      for(var i=0;i<Math.min(72,times.length);i++){
+        var shr=Math.abs((wsp850[i]||0)-(wsp[i]||0));
+        var prob=calcStormProb(
+          cape[i]||0, li[i]||0, cin[i]||0,
+          prc[i]||0, wmo[i]||0, shr
+        );
+        pointData.push({
+          prob:prob,
+          cape:Math.round(cape[i]||0),
+          li:+(li[i]||0).toFixed(1),
+          cin:Math.round(cin[i]||0),
+          prc:+(prc[i]||0).toFixed(1),
+          shr:Math.round(shr),
+          wmo:wmo[i]||0,
+          time:times[i]
+        });
+      }
+      burzeData[idx]=pointData;
+      if(idx===0&&times.length>0){
+        burzeHours=times.slice(0,72);
+      }
+      loaded++;
+      document.getElementById('burze-progress').textContent=loaded+'/'+total;
+
+      if(loaded===total){
+        document.getElementById('burze-loading').style.display='none';
+        burzeLoaded=true;
+        document.getElementById('burze-update-time').textContent=
+          new Date().toTimeString().substring(0,5);
+        renderBurzeHour(burzeHourIdx);
+        buildStormChart();
+      }
+    })
+    .catch(function(){
+      loaded++;
+      burzeData[idx]=[];
+      document.getElementById('burze-progress').textContent=loaded+'/'+total;
+      if(loaded===total){
+        document.getElementById('burze-loading').style.display='none';
+        burzeLoaded=true;
+        renderBurzeHour(burzeHourIdx);
+      }
+    });
+
+    // Rozsmaruj zapytania w czasie aby nie przeciążać API
+  });
+}
+
+// ── RENDEROWANIE GODZINY NA MAPIE ────────────────────────────────────
+function renderBurzeHour(hIdx){
+  if(!mapBurze||!burzeLoaded)return;
+  burzeHourIdx=hIdx;
+
+  // Usuń stare markery
+  burzeMarkers.forEach(function(m){mapBurze.removeLayer(m);});
+  burzeMarkers=[];
+
+  var maxProb=0;
+  var maxProbData=null;
+
+  STORM_GRID.forEach(function(pt,idx){
+    var data=burzeData[idx];
+    if(!data||!data[hIdx])return;
+    var d=data[hIdx];
+    var col=probToColor(d.prob);
+
+    // Koło z gradient glow
+    var circle=L.circleMarker([pt[0],pt[1]],{
+      radius: d.prob>60?22:d.prob>40?18:d.prob>20?14:11,
+      color: col.stroke,
+      fillColor: col.fill,
+      fillOpacity: Math.max(0.2, d.prob/130),
+      weight: d.prob>60?2:1,
+      className:'storm-circle'
+    }).addTo(mapBurze);
+
+    // Tooltip
+    circle.bindTooltip(
+      '<b style="color:'+col.fill+'">'+d.prob+'%</b><br>'+
+      '<span style="font-size:.75rem">CAPE: '+d.cape+'<br>LI: '+d.li+'<br>'+pt[0]+'°N '+pt[1]+'°E</span>',
+      {sticky:true,className:'storm-tooltip',opacity:.95}
+    );
+
+    // Ikona błyskawicy gdy >60%
+    if(d.prob>=60){
+      var icon=L.divIcon({
+        className:'',
+        html:'<div style="font-size:'+(d.prob>=80?'1.4rem':'1.1rem')+';text-shadow:0 0 8px '+(d.prob>=80?'#cc00ff':'#ff4400')+';animation:blink '+(d.prob>=80?'.5s':'.8s')+' infinite;user-select:none">⚡</div>',
+        iconSize:[20,20],iconAnchor:[10,10]
+      });
+      var blitzIcon=L.marker([pt[0],pt[1]+0.05],{icon:icon,zIndexOffset:100,interactive:false}).addTo(mapBurze);
+      burzeMarkers.push(blitzIcon);
+    }
+
+    burzeMarkers.push(circle);
+
+    // Śledź max prob dla panelu lewego
+    if(d.prob>maxProb){maxProb=d.prob;maxProbData=d;}
+  });
+
+  // Aktualizuj panel lewy — dane dla Twojej lokalizacji lub max
+  var myData=getMyLocationData(hIdx)||maxProbData||{prob:0,cape:0,li:0,cin:0,prc:0,shr:0,wmo:0};
+  updateBurzePanel(myData);
+
+  // Aktualizuj label czasu
+  updateBurzeTimeLabel(hIdx);
+}
+
+function getMyLocationData(hIdx){
+  if(!uLat||!uLon)return null;
+  // Znajdź najbliższy punkt siatki
+  var best=null,bestDist=999;
+  STORM_GRID.forEach(function(pt,idx){
+    var d=Math.sqrt(Math.pow(pt[0]-uLat,2)+Math.pow(pt[1]-uLon,2));
+    if(d<bestDist){bestDist=d;best=idx;}
+  });
+  if(best===null||!burzeData[best]||!burzeData[best][hIdx])return null;
+  return burzeData[best][hIdx];
+}
+
+function updateBurzePanel(d){
+  var col=probToColor(d.prob);
+  var fill=document.getElementById('sg-fill');
+  var val=document.getElementById('sg-val');
+  if(fill){fill.style.width=d.prob+'%';fill.style.background=col.fill;}
+  if(val){
+    val.style.color=col.fill;
+    val.textContent=d.prob+'% — '+
+      (d.prob>=80?'Ekstremalne ⚡⚡':d.prob>=60?'Wysokie ⚡':
+       d.prob>=40?'Umiarkowane':d.prob>=20?'Niskie':'Brak ryzyka');
+  }
+  var set=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
+  set('sp-cape',d.cape+' J/kg');
+  set('sp-li',d.li);
+  set('sp-cin',d.cin+' J/kg');
+  set('sp-prc',d.prc+' mm/h');
+  set('sp-shr',d.shr+' km/h');
+  set('sp-wmo',d.wmo);
+}
+
+function updateBurzeTimeLabel(hIdx){
+  var el=document.getElementById('burze-time-label');
+  if(!el)return;
+  if(hIdx===0){el.textContent='Teraz';return;}
+  var t=burzeHours[hIdx];
+  if(!t){el.textContent='h+'+hIdx;return;}
+  var dt=new Date(t);
+  var now=new Date();
+  var diff=Math.round((dt-now)/3600000);
+  var dayStr=dt.getDay()===new Date().getDay()?'Dziś':
+    dt.getDay()===(new Date().getDay()+1)%7?'Jutro':
+    ['Nd','Pn','Wt','Śr','Czw','Pt','Sob'][dt.getDay()];
+  el.textContent=dayStr+' '+
+    String(dt.getHours()).padStart(2,'0')+':00'+
+    ' (+'+(diff>0?diff:0)+'h)';
+}
+
+// ── WYKRES CHART.JS ──────────────────────────────────────────────────
+function buildStormChart(){
+  var canvas=document.getElementById('chart-storm');
+  if(!canvas)return;
+  // Pobierz dane dla najbliższego punktu do GPS
+  var myIdx=0;
+  if(uLat&&uLon){
+    var bestDist=999;
+    STORM_GRID.forEach(function(pt,i){
+      var d=Math.sqrt(Math.pow(pt[0]-uLat,2)+Math.pow(pt[1]-uLon,2));
+      if(d<bestDist){bestDist=d;myIdx=i;}
+    });
+  }
+  var myData=burzeData[myIdx]||[];
+  var labels=myData.map(function(d,i){
+    if(i%6===0){
+      var dt=new Date(d.time||'');
+      return isNaN(dt)?'h'+i:String(dt.getHours()).padStart(2,'0')+':00';
+    }return '';
+  });
+  var probs=myData.map(function(d){return d.prob;});
+  var colors=myData.map(function(d){
+    var c=probToColor(d.prob);return c.fill;
+  });
+
+  if(burzeChartInst)burzeChartInst.destroy();
+  burzeChartInst=new Chart(canvas,{
+    type:'bar',
+    data:{
+      labels:labels,
+      datasets:[{
+        data:probs,
+        backgroundColor:colors,
+        borderColor:colors,
+        borderWidth:0,
+        borderRadius:2
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},
+        tooltip:{callbacks:{label:function(ctx){return ctx.parsed.y+'% ryzyko';}}}},
+      scales:{
+        x:{ticks:{color:'#6b90b0',font:{size:8},maxRotation:0},
+           grid:{color:'rgba(26,53,80,.3)'}},
+        y:{min:0,max:100,ticks:{color:'#6b90b0',font:{size:8},
+           callback:function(v){return v+'%';}},
+           grid:{color:'rgba(26,53,80,.3)'}}
+      },
+      onClick:function(e,els){
+        if(els.length){
+          var idx=els[0].index;
+          document.getElementById('burze-slider').value=idx;
+          onBurzeSlider(idx);
+        }
+      }
+    }
+  });
+}
+
+// ── KONTROLKI SUWAKA ─────────────────────────────────────────────────
+function onBurzeSlider(val){
+  burzeHourIdx=parseInt(val);
+  renderBurzeHour(burzeHourIdx);
+  // Zaznacz na wykresie
+  if(burzeChartInst){
+    burzeChartInst.data.datasets[0].borderWidth=
+      burzeChartInst.data.datasets[0].data.map(function(_,i){return i===burzeHourIdx?3:0;});
+    burzeChartInst.update('none');
+  }
+}
+
+function toggleBurzeAnim(){
+  var btn=document.getElementById('burze-play-btn');
+  if(burzeAnimRunning){
+    clearInterval(burzeAnimInt);
+    burzeAnimRunning=false;
+    if(btn)btn.textContent='▶';
+  } else {
+    if(!burzeLoaded)return;
+    burzeAnimRunning=true;
+    if(btn)btn.textContent='⏹';
+    burzeAnimInt=setInterval(function(){
+      var next=(burzeHourIdx+1)%72;
+      document.getElementById('burze-slider').value=next;
+      onBurzeSlider(next);
+    },300);
+  }
+}
+
+// ── INICJALIZACJA SEKCJI ─────────────────────────────────────────────
+function initBurze(){
+  if(burzeInit)return;
+  burzeInit=true;
+  initMapBurze();
+  setTimeout(function(){loadBurzeData(false);},400);
+  // Odświeżaj co 15 minut
+  burzeRefreshInt=setInterval(function(){
+    burzeLoaded=false;
+    loadBurzeData(true);
+  },15*60*1000);
+}
+
+
 window.onload=function(){startGPS();};
 </script>
 </body>
