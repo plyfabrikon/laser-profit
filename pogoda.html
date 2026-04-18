@@ -365,49 +365,6 @@ body{background:#060d18;color:#dff0ff;font-family:Arial,sans-serif;font-size:14p
 <div class="s"><div class="sl">MAPA NA ZYWO</div></div>
 <div id="mapbox">
   <div id="map"></div>
-  <div id="radar-ui" style="
-position:absolute;
-bottom:10px;
-left:50%;
-transform:translateX(-50%);
-z-index:700;
-background:rgba(7,17,31,.9);
-padding:8px 10px;
-border-radius:8px;
-border:1px solid #1e3a55;
-display:flex;
-flex-direction:column;
-gap:6px;
-min-width:260px;
-">
-
-  <!-- czas -->
-  <div id="radar-time" style="
-  text-align:center;
-  font-size:.7rem;
-  color:#29d4ff;
-  font-weight:600;">
-    --:--
-  </div>
-
-  <!-- slider -->
-  <input id="radarSlider" type="range"
-    min="0" max="100" value="100"
-    style="width:100%">
-
-  <!-- kontrolki -->
-  <div style="display:flex;gap:6px;justify-content:center">
-
-    <button onclick="setRadarMode('live')" id="btn-live">LIVE</button>
-    <button onclick="setRadarMode('history')" id="btn-hist">HIST</button>
-    <button onclick="toggleRadar()" id="btn-play">PAUSE</button>
-
-  </div>
-</div>
-  <input id="radarSlider" type="range"
-  min="0" max="10" value="10"
-  style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);
-  width:220px;z-index:600;">
   <div class="mbtns">
     <div class="lyr-panel">
       <div class="lyr-title">⚙ WARSTWY MAPY</div>
@@ -518,10 +475,6 @@ setInterval(function(){var n=new Date();document.getElementById("clk").textConte
 // MAPA
 var OWM_KEY="f65b3018ded1baf5c48413dbd6703953";
 var satLyr=null, rvLyr=null, extraLyr=null, blitzWS=null, blitzMarkers=[];
-var radarFrames = [];
-var radarIndex = 0;
-var radarTimer = null;
-var radarMode = "live"; // "live" albo "history"
 
 function initMap(lt,ln){
   if(mapObj)return;
@@ -563,19 +516,18 @@ function loadRVandSat(){
     var host=d.host||"https://tilecache.rainviewer.com";
 
     // RADAR - ostatnia klatka
-   // RADAR - wszystkie klatki (historia + live)
-var rf = d.radar && d.radar.past ? d.radar.past : [];
-
-if(rf.length){
-  radarFrames = rf;
-  radarIndex = rf.length - 1;
-
-  if(radarMode === "live"){
-    updateRadarFrame(); // tylko najnowsza
-  } else {
-    startRadarLoop();   // animacja historii
-  }
-} 
+    var rf=d.radar&&d.radar.past?d.radar.past:[];
+    if(rf.length){
+      var rl=rf[rf.length-1];
+      if(rvLyr&&mapObj.hasLayer(rvLyr))mapObj.removeLayer(rvLyr);
+      rvLyr=L.tileLayer(host+rl.path+"/512/{z}/{x}/{y}/6/1_1.png",{
+        opacity: 0.85, tileSize:512, zoomOffset:-1,
+        maxNativeZoom:6, maxZoom:12, zIndex:3
+      });
+      if(layers.radar&&layers.radar.on) rvLyr.addTo(mapObj);
+      var rt=new Date(rl.time*1000);
+      document.getElementById("mbadge").textContent="RADAR "+pd(rt.getHours())+":"+pd(rt.getMinutes())+" UTC";
+    }
 
     // SATELITA PODCZERWIEN - ostatnia klatka z satellite.infrared
     var sf=d.satellite&&d.satellite.infrared?d.satellite.infrared:[];
@@ -605,7 +557,7 @@ if(rf.length){
 }
 
 function loadRV(){loadRVandSat();}
-setInterval(loadRVandSat,60000);
+setInterval(loadRVandSat,300000);
 
 // BLITZORTUNG - losowy serwer z listy
 function startBlitz(){
@@ -1208,170 +1160,6 @@ window.addEventListener("resize", function(){
   if(typeof mapObj !== "undefined" && mapObj) {
     setTimeout(function(){ mapObj.invalidateSize(); }, 100);
   }
-  function updateRadarFrame(){
-  if(!radarFrames.length || !mapObj) return;
-
-  var host = "https://tilecache.rainviewer.com";
-  var frame = radarFrames[radarIndex];
-
-  if(rvLyr && mapObj.hasLayer(rvLyr)){
-    mapObj.removeLayer(rvLyr);
-  }
-
-  rvLyr = L.tileLayer(host + frame.path + "/512/{z}/{x}/{y}/6/1_1.png", {
-    opacity: 0.85,
-    tileSize:512,
-    zoomOffset:-1,
-    maxNativeZoom:6,
-    maxZoom:12,
-    zIndex:3
-  });
-
-  if(layers.radar.on){
-    rvLyr.addTo(mapObj);
-  }
-
-  var t = new Date(frame.time * 1000);
-  document.getElementById("mbadge").textContent =
-    "RADAR " + pd(t.getHours()) + ":" + pd(t.getMinutes()) + " UTC";
-}
-function startRadarLoop(){
-  if(radarTimer) clearInterval(radarTimer);
-
-  radarTimer = setInterval(function(){
-    radarIndex--;
-    if(radarIndex < 0){
-      radarIndex = radarFrames.length - 1;
-    }
-    updateRadarFrame();
-  }, 800); // prędkość animacji (ms)
-}
-var slider = document.getElementById("radarSlider");
-var timeLabel = document.getElementById("radar-time");
-var isPlaying = true;
-
-// aktualizacja UI
-function updateRadarUI(){
-  if(!radarFrames.length) return;
-
-  var max = radarFrames.length - 1;
-
-  // slider
-  if(slider){
-    slider.value = (radarIndex / max) * 100;
-  }
-
-  // czas
-  var t = new Date(radarFrames[radarIndex].time * 1000);
-  var hh = pd(t.getHours());
-  var mm = pd(t.getMinutes());
-
-  if(timeLabel){
-    timeLabel.textContent = hh + ":" + mm + " UTC";
-  }
-}
-
-// override starej funkcji
-function updateRadarFrame(){
-  if(!radarFrames.length || !mapObj) return;
-
-  var host = "https://tilecache.rainviewer.com";
-  var frame = radarFrames[radarIndex];
-
-  if(rvLyr && mapObj.hasLayer(rvLyr)){
-    mapObj.removeLayer(rvLyr);
-  }
-
-  rvLyr = L.tileLayer(host + frame.path + "/512/{z}/{x}/{y}/6/1_1.png", {
-    opacity: 0.85,
-    tileSize:512,
-    zoomOffset:-1,
-    maxNativeZoom:6,
-    maxZoom:12,
-    zIndex:3
-  });
-
-  if(layers.radar.on){
-    rvLyr.addTo(mapObj);
-  }
-
-  updateRadarUI(); // 🔥 NOWE
-}
-
-// animacja
-function startRadarLoop(){
-  if(radarTimer) clearInterval(radarTimer);
-
-  isPlaying = true;
-
-  radarTimer = setInterval(function(){
-    radarIndex--;
-    if(radarIndex < 0){
-      radarIndex = radarFrames.length - 1;
-    }
-    updateRadarFrame();
-  }, 700);
-}
-
-// LIVE
-function startRadarLive(){
-  if(radarTimer) clearInterval(radarTimer);
-
-  isPlaying = true;
-
-  radarTimer = setInterval(function(){
-    radarIndex = radarFrames.length - 1;
-    updateRadarFrame();
-  }, 2000);
-}
-
-// play/pause
-function toggleRadar(){
-  if(isPlaying){
-    clearInterval(radarTimer);
-    isPlaying = false;
-    document.getElementById("btn-play").textContent = "PLAY";
-  } else {
-    if(radarMode === "live"){
-      startRadarLive();
-    } else {
-      startRadarLoop();
-    }
-    document.getElementById("btn-play").textContent = "PAUSE";
-  }
-}
-
-// tryb
-function setRadarMode(mode){
-  radarMode = mode;
-
-  if(mode === "live"){
-    startRadarLive();
-  } else {
-    startRadarLoop();
-  }
-}
-
-// slider sterowanie
-if(slider){
-  slider.addEventListener("input", function(){
-
-    if(radarTimer) clearInterval(radarTimer); // STOP
-
-    if(!radarFrames.length) return;
-
-    var max = radarFrames.length - 1;
-    radarIndex = Math.round((this.value / 100) * max);
-
-    updateRadarFrame();
-  });
-
-  slider.addEventListener("change", function(){
-    if(radarMode === "history"){
-      startRadarLoop(); // wraca animacja
-    }
-  });
-}
 });
 </script>
 </body>
