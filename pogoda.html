@@ -1054,7 +1054,12 @@ function showSec(el,s){
   document.querySelectorAll('.section').forEach(function(x){x.classList.remove('active');});
   var sec=document.getElementById('sec-'+s);if(sec)sec.classList.add('active');
   currentSection=s;
-  if(s==='sat24')initSat24();
+  if(s==='sat24'){
+  initSat24();
+  setTimeout(()=>{
+    if(mapSat) mapSat.invalidateSize();
+  }, 300);
+}
   if(s==='wyladowania'){
     setTimeout(function(){initBlitzIframe();},100);
     reloadBlitzIframe();
@@ -1075,6 +1080,7 @@ var satAnimInt=null,satFrames=[],satFrameIdx=0,satAnimRunning=false;
 // ── SAT24 ──────────────────────────────────
 var sat24Init=false;
 function initSat24(){
+if(mapSat) return;
   if(sat24Init)return;
   sat24Init=true;
   var ctr=mapObj?mapObj.getCenter():{lat:52,lng:20};
@@ -1091,6 +1097,16 @@ function initSat24(){
     var host=d.host||'https://tilecache.rainviewer.com';
     var sf=d.satellite&&d.satellite.infrared?d.satellite.infrared:[];
     satFrames=sf.map(function(f){return host+f.path;});
+	if(!satFrames.length){
+  console.log("Brak SAT24 – fallback chmury");
+
+  satLyrSat = L.tileLayer(
+    "https://tile.openweathermap.org/map/clouds_new/{z}/{x}/{y}.png?appid="+OWM_KEY,
+    {opacity:0.7}
+  ).addTo(mapSat);
+
+  return;
+}
     if(satFrames.length){
       satLyrSat=L.tileLayer(satFrames[satFrames.length-1]+'/256/{z}/{x}/{y}/0/0_0.png',
         {opacity:0.92,tileSize:256,maxNativeZoom:5,maxZoom:12,zIndex:2}).addTo(mapSat);
@@ -1533,7 +1549,17 @@ function loadRVandSat(){
       document.getElementById("map-badge-txt").textContent="RADAR "+pd(rt.getHours())+":"+pd(rt.getMinutes())+" UTC";
     }
     // Satelita IR
-    var sf=d.satellite&&d.satellite.infrared?d.satellite.infrared:[];
+   var sf = [];
+
+if(d.satellite){
+  if(d.satellite.infrared && d.satellite.infrared.length){
+    sf = d.satellite.infrared;
+  } else if(d.satellite.visible && d.satellite.visible.length){
+    sf = d.satellite.visible;
+  }
+}
+console.log("SAT frames:", sf.length);
+satFrames=sf.map(function(f){return host+f.path;});
     if(sf.length){
       var sl=sf[sf.length-1];
       if(satLyr&&mapObj.hasLayer(satLyr))mapObj.removeLayer(satLyr);
@@ -2520,6 +2546,7 @@ function initBurze(){
 
 
 window.onload=function(){startGPS();};
+
 </script>
 </body>
 </html>
