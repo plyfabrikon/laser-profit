@@ -1017,8 +1017,8 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
           <!-- Legenda -->
           <div style="font-size:.58rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Legenda mapy</div>
           <div class="storm-legend">
-            <div class="storm-legend-row"><div class="storm-legend-dot" style="background:#1fde8a;box-shadow:0 0 6px #1fde8a"></div>0–20% Brak ryzyka</div>
-            <div class="storm-legend-row"><div class="storm-legend-dot" style="background:#ffe033;box-shadow:0 0 6px #ffe033"></div>20–40% Niskie ryzyko</div>
+            <div class="storm-legend-row">
+            <div class="storm-legend-row">
             <div class="storm-legend-row"><div class="storm-legend-dot" style="background:#ff8800;box-shadow:0 0 6px #ff8800"></div>40–60% Umiarkowane</div>
             <div class="storm-legend-row"><div class="storm-legend-dot" style="background:#ff3a3a;box-shadow:0 0 6px #ff3a3a"></div>60–80% Wysokie ⚡</div>
             <div class="storm-legend-row"><div class="storm-legend-dot" style="background:#cc00ff;box-shadow:0 0 8px #cc00ff"></div>80–100% Ekstremalne ⚡⚡</div>
@@ -2568,7 +2568,7 @@ function probToColor(p){
   if(p>=80) return {fill:'#cc00ff',stroke:'#ff00ff',glow:'rgba(200,0,255,0.4)'};
   if(p>=60) return {fill:'#ff2200',stroke:'#ff4400',glow:'rgba(255,50,0,0.4)'};
   if(p>=40) return {fill:'#ff8800',stroke:'#ffaa00',glow:'rgba(255,140,0,0.35)'};
-  if(p>=20) return {fill:'#ffe033',stroke:'#ffcc00',glow:'rgba(255,220,50,0.3)'};
+  // p<40 -- brak koloru (usunieto zolty i zielony)
   return     {fill:'#1fde8a',stroke:'#00cc66',glow:'rgba(31,220,138,0.2)'};
 }
 
@@ -2754,7 +2754,7 @@ function loadBurzeData(force){
 // ═══════════════════════════════════════════════════════════
 // HALO OVERLAY — SVG z sub-podziałem 3×3 i interpolacją
 // ═══════════════════════════════════════════════════════════
-var STORM_THRESHOLD = 20;
+var STORM_THRESHOLD = 40;
 
 // Sub-siatka: każdy punkt główny dzieli się na 3×3 = 9 sub-komórek
 // Sub-komórka = STORM_CELL_LAT/3 × STORM_CELL_LON/3
@@ -2896,11 +2896,10 @@ function easeInOutCubic(t) {
 
 // ── Kolor RGBA dla prob ───────────────────────────────────────────
 function probToRGBA(p, alpha) {
-  if(p>=80) return [200,  0,255,alpha];  // fioletowy — ekstremalna
-  if(p>=60) return [255, 20, 20,alpha];  // czerwony — wysoka
-  if(p>=40) return [255,120,  0,alpha];  // pomarańczowy — umiarkowana
-  if(p>=20) return [255,210, 30,alpha];  // żółty — niska
-  return [0,0,0,0];
+  if(p>=80) return [200,  0,255,alpha];  // fioletowy -- ekstremalna
+  if(p>=60) return [255, 20, 20,alpha];  // czerwony -- wysoka
+  if(p>=40) return [255,120,  0,alpha];  // pomaranczowy -- umiarkowana
+  return [0,0,0,0];                      // ponizej 40% -- brak koloru
 }
 
 // ── Główny draw na canvas ─────────────────────────────────────────
@@ -2926,7 +2925,7 @@ function drawFrame(gridIgnored) {
   // Promień plamy w pikselach — skalowany wg zoom
   // przy zoom 5: ~80px, zoom 6: ~120px
   var zoom = map.getZoom();
-  var radius = Math.max(30, Math.min(200, 18 * Math.pow(2, zoom-4)));
+  var radius = Math.max(22, Math.min(150, 13.5 * Math.pow(2, zoom-4))); // zmniejszony o 1/4
 
   STORM_GRID.forEach(function(pt,idx){
     var d = burzeData[idx]&&burzeData[idx][h];
@@ -2943,9 +2942,9 @@ function drawFrame(gridIgnored) {
 
     // Gradient radialny — środek pełny kolor, krawędź przezroczysty
     var grad = ctx.createRadialGradient(px.x,px.y,0, px.x,px.y,radius);
-    var alpha = Math.min(0.85, prob/100);
+    var alpha = Math.min(1.0, (prob/100) * 1.25); // zwiekszone o 1/4
     grad.addColorStop(0,   'rgba('+r+','+g+','+b+','+alpha.toFixed(2)+')');
-    grad.addColorStop(0.4, 'rgba('+r+','+g+','+b+','+(alpha*0.7).toFixed(2)+')');
+    grad.addColorStop(0.4, 'rgba('+r+','+g+','+b+','+(alpha*0.75).toFixed(2)+')');
     grad.addColorStop(1,   'rgba('+r+','+g+','+b+',0)');
 
     ctx.beginPath();
