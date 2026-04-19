@@ -437,6 +437,21 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
 .chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px}
 .chart-title{font-size:.62rem;font-weight:700;letter-spacing:2px;color:var(--text2);text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:6px}
 .chart-title::after{content:'';flex:1;height:1px;background:var(--border)}
+/* Tabela godzinowa */
+.ph-col{display:flex;flex-direction:column;align-items:center;min-width:56px;padding:6px 4px;border-right:1px solid rgba(255,255,255,.04);cursor:default;transition:background .15s}
+.ph-col:hover{background:rgba(255,255,255,.05)}
+.ph-col.now{background:rgba(31,222,138,.08);border-right:2px solid #1fde8a}
+.ph-hour{font-size:.62rem;font-weight:700;color:var(--text2);margin-bottom:4px}
+.ph-now-label{font-size:.48rem;color:#1fde8a;font-weight:700;text-transform:uppercase;margin-bottom:2px}
+.ph-icon{font-size:1.3rem;margin:2px 0}
+.ph-temp{font-size:.85rem;font-weight:800;color:#ff6b35}
+.ph-feel{font-size:.6rem;color:var(--text2);margin-bottom:3px}
+.ph-rain{font-size:.65rem;font-weight:700;color:#29d4ff}
+.ph-pp{font-size:.55rem;color:var(--text2)}
+.ph-wind{font-size:.6rem;color:#1fde8a;margin-top:2px}
+.ph-uv{font-size:.55rem;font-weight:700;margin-top:1px}
+.ph-sep{width:100%;height:1px;background:rgba(255,255,255,.06);margin:3px 0}
+.ph-label{font-size:.45rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
 .chart-wrap{position:relative;height:160px}
 .fc7-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
 .fc7-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;transition:all .15s;border-top:3px solid transparent}
@@ -806,36 +821,27 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
       </div>
     </div>
 
-    <!-- Wykresy podstawowe -->
-    <div class="chart-card">
-      <div class="chart-title">🌡 Temperatura + odczuwalna — 48h</div>
-      <div class="chart-wrap" style="height:140px"><canvas id="chart-temp"></canvas></div>
-    </div>
-    <div class="chart-card">
-      <div class="chart-title">🌧 Opady + szansa deszczu — 48h</div>
-      <div class="chart-wrap" style="height:130px"><canvas id="chart-rain"></canvas></div>
-    </div>
-    <div class="chart-card">
-      <div class="chart-title">💨 Wiatr + porywy — 48h</div>
-      <div class="chart-wrap" style="height:130px"><canvas id="chart-wind"></canvas></div>
-    </div>
-
-    <!-- Wilgotność + ciśnienie -->
-    <div class="chart-card">
-      <div class="chart-title">💧 Wilgotność względna — 48h</div>
-      <div class="chart-wrap" style="height:120px"><canvas id="chart-hum"></canvas></div>
-    </div>
-
-    <!-- UV index -->
-    <div class="chart-card">
-      <div class="chart-title">☀ Indeks UV — 48h (chroń się gdy > 3)</div>
-      <div class="chart-wrap" style="height:110px"><canvas id="chart-uv"></canvas></div>
+    <!-- Tabela godzinowa 48h -->
+    <div class="chart-card" style="padding:0;overflow:hidden">
+      <div class="chart-title" style="padding:12px 16px 0">📋 Prognoza godzinowa — 48h</div>
+      <div style="overflow-x:auto;padding:8px 0 12px">
+        <div id="prog-table" style="display:flex;gap:0;min-width:max-content"></div>
+      </div>
     </div>
 
     <!-- 7 dni -->
     <div class="chart-card">
-      <div class="chart-title">📅 Prognoza 7 dni — kliknij po szczegóły</div>
+      <div class="chart-title">📅 Prognoza 7 dni</div>
       <div class="fc7-grid" id="fc7-grid"></div>
+    </div>
+
+    <!-- Ukryte canvas dla Chart.js (zachowane żeby nie psuć JS) -->
+    <div style="display:none">
+      <canvas id="chart-temp"></canvas>
+      <canvas id="chart-rain"></canvas>
+      <canvas id="chart-wind"></canvas>
+      <canvas id="chart-hum"></canvas>
+      <canvas id="chart-uv"></canvas>
     </div>
   </div>
 </div><!-- /sec-prognoza -->
@@ -906,17 +912,25 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
   <div class="burze-wrap">
 
     <!-- Topbar z suwakiem -->
-    <div class="burze-topbar">
-      <div style="font-size:.62rem;font-weight:700;letter-spacing:1.5px;color:var(--text2);text-transform:uppercase;white-space:nowrap">🌩 Prognoza burz 72h</div>
-      <div class="time-slider-wrap">
+    <div class="burze-topbar" style="flex-direction:column;gap:4px;padding:6px 14px">
+      <div style="display:flex;align-items:center;gap:10px;width:100%">
+        <span style="font-size:.6rem;font-weight:700;letter-spacing:1.5px;color:var(--text2);text-transform:uppercase;white-space:nowrap">🌩 Burze 72h</span>
+        <!-- Duża godzina -->
+        <span id="burze-time-big" style="font-size:1.05rem;font-weight:800;color:#1fde8a;font-family:monospace;letter-spacing:1px;min-width:110px">Teraz</span>
         <button class="play-btn" id="burze-play-btn" onclick="toggleBurzeAnim()" title="Animuj">▶</button>
-        <input type="range" class="time-slider" id="burze-slider" min="0" max="71" value="0" oninput="onBurzeSlider(this.value)">
-        <div class="time-label" id="burze-time-label">Teraz</div>
+        <div style="display:flex;gap:4px;align-items:center;margin-left:auto">
+          <span style="font-size:.55rem;color:var(--text2)">Dane:</span>
+          <span style="font-size:.55rem;color:var(--blue2);font-family:monospace" id="burze-update-time">--</span>
+          <button onclick="loadBurzeData(true)" style="font-size:.52rem;padding:2px 7px;border-radius:4px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text2);cursor:pointer">🔄</button>
+        </div>
       </div>
-      <div style="display:flex;gap:6px;align-items:center">
-        <span style="font-size:.58rem;color:var(--text2)">Dane:</span>
-        <span style="font-size:.58rem;color:var(--blue2);font-family:monospace" id="burze-update-time">--</span>
-        <button onclick="loadBurzeData(true)" style="font-size:.55rem;padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text2);cursor:pointer">🔄</button>
+      <!-- Slider z linią "teraz" -->
+      <div style="position:relative;width:100%;display:flex;align-items:center;gap:8px">
+        <input type="range" class="time-slider" id="burze-slider" min="0" max="71" value="0"
+          style="flex:1" oninput="onBurzeSlider(this.value)">
+        <!-- Marker "teraz" -->
+        <div id="burze-now-marker" style="position:absolute;top:-2px;bottom:-2px;width:2px;background:#1fde8a;border-radius:2px;pointer-events:none;box-shadow:0 0 6px #1fde8a;display:none"></div>
+        <span id="burze-time-label" style="font-size:.58rem;color:var(--text2);white-space:nowrap;min-width:40px">Teraz</span>
       </div>
     </div>
 
@@ -1392,6 +1406,7 @@ function fetchProgData(lt,ln){
     buildCharts(d);
     buildFc7(d.daily);
     updateProgStats(d);
+    buildProgTable(d);
   }).catch(function(){});
 }
 
@@ -3133,6 +3148,142 @@ function initBurze(){
   },15*60*1000);
 }
 
+
+// ═══════════════════════════════════════════════════
+// TABELA GODZINOWA PROGNOZY
+// ═══════════════════════════════════════════════════
+var WMO_ICON={0:'☀',1:'🌤',2:'⛅',3:'☁',
+  45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌧',
+  61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'❄',
+  80:'🌦',81:'🌧',82:'⛈',
+  95:'⛈',96:'⛈',99:'⛈'};
+
+function wmoIcon(code){return WMO_ICON[code]||'🌡';}
+
+function uvColor(uv){
+  if(uv>=11)return'#cc00ff';
+  if(uv>=8) return'#ff3300';
+  if(uv>=6) return'#ff8800';
+  if(uv>=3) return'#ffe033';
+  return'#1fde8a';
+}
+
+function buildProgTable(d){
+  var box=document.getElementById('prog-table');
+  if(!box)return;
+  box.innerHTML='';
+  var h=d.hourly||{};
+  var times=h.time||[];
+  var t2m=h.temperature_2m||[];
+  var feel=h.apparent_temperature||[];
+  var prc=h.precipitation||[];
+  var pp=h.precipitation_probability||[];
+  var wsp=h.wind_speed_10m||[];
+  var gst=h.wind_gusts_10m||[];
+  var uv=h.uv_index||[];
+  var wmo=h.weather_code||[];
+
+  // Znajdź indeks "teraz"
+  var now=new Date();
+  var nowStr=now.getFullYear()+'-'
+    +String(now.getMonth()+1).padStart(2,'0')+'-'
+    +String(now.getDate()).padStart(2,'0')+'T'
+    +String(now.getHours()).padStart(2,'0')+':00';
+  var nowIdx=0;
+  for(var i=0;i<times.length;i++){
+    if(times[i]<=nowStr)nowIdx=i; else break;
+  }
+
+  var count=Math.min(48,times.length);
+  for(var i=0;i<count;i++){
+    var t=new Date(times[i]);
+    var hh=t.getHours();
+    var isNow=(i===nowIdx);
+    var isMidnight=(hh===0);
+
+    var col=document.createElement('div');
+    col.className='ph-col'+(isNow?' now':'');
+    col.title=times[i];
+
+    // Nagłówek: dzień + godzina
+    var dayStr='';
+    if(i===0||isMidnight){
+      var days=['Nd','Pn','Wt','Śr','Cz','Pt','So'];
+      dayStr='<div style="font-size:.48rem;color:var(--accent);font-weight:700;margin-bottom:1px">'+
+        days[t.getDay()]+'</div>';
+    }
+
+    var uvVal=uv[i]||0;
+    var ppVal=pp[i]||0;
+    var prcVal=prc[i]||0;
+    var tempVal=t2m[i]!==undefined?Math.round(t2m[i]):'--';
+    var feelVal=feel[i]!==undefined?Math.round(feel[i]):'--';
+    var wspVal=wsp[i]!==undefined?Math.round(wsp[i]):'--';
+    var gstVal=gst[i]!==undefined?Math.round(gst[i]):'--';
+
+    // Kolor temperatury
+    var tc=t2m[i]||0;
+    var tempColor=tc>=35?'#ff2200':tc>=28?'#ff6b35':tc>=20?'#ffe033':tc>=10?'#1fde8a':tc>=0?'#29d4ff':'#8888ff';
+
+    // Kolor PP
+    var ppColor=ppVal>=80?'#ff3300':ppVal>=50?'#ff8800':ppVal>=30?'#ffe033':'#29d4ff';
+
+    col.innerHTML=
+      dayStr+
+      (isNow?'<div class="ph-now-label">TERAZ</div>':'')+
+      '<div class="ph-hour">'+String(hh).padStart(2,'0')+'</div>'+
+      '<div class="ph-icon">'+wmoIcon(wmo[i]||0)+'</div>'+
+      '<div class="ph-sep"></div>'+
+      '<div class="ph-label">temp</div>'+
+      '<div class="ph-temp" style="color:'+tempColor+'">'+tempVal+'°</div>'+
+      '<div class="ph-feel">odcz. '+feelVal+'°</div>'+
+      '<div class="ph-sep"></div>'+
+      '<div class="ph-label">deszcz</div>'+
+      '<div class="ph-rain">'+(prcVal>0?prcVal.toFixed(1)+'mm':'—')+'</div>'+
+      '<div class="ph-pp" style="color:'+ppColor+'">'+ppVal+'%</div>'+
+      '<div class="ph-sep"></div>'+
+      '<div class="ph-label">wiatr</div>'+
+      '<div class="ph-wind">'+wspVal+'<span style="color:var(--text2);font-size:.5rem"> km/h</span></div>'+
+      '<div class="ph-feel">porywy '+gstVal+'</div>'+
+      '<div class="ph-sep"></div>'+
+      '<div class="ph-label">UV</div>'+
+      '<div class="ph-uv" style="color:'+uvColor(uvVal)+'">'+uvVal.toFixed(1)+'</div>';
+
+    box.appendChild(col);
+  }
+
+  // Przewiń do "teraz"
+  var nowEl=box.querySelector('.now');
+  if(nowEl)setTimeout(function(){nowEl.scrollIntoView({block:'nearest',inline:'center',behavior:'smooth'});},100);
+}
+
+// ═══ Aktualizacja markera "teraz" na suwaku burz ═══
+function updateNowMarker(){
+  var slider=document.getElementById('burze-slider');
+  var marker=document.getElementById('burze-now-marker');
+  if(!slider||!marker||!burzeHours||!burzeHours.length)return;
+
+  // Znajdź indeks teraźniejszości
+  var now=new Date();
+  var nowStr=now.getUTCFullYear()+'-'
+    +String(now.getUTCMonth()+1).padStart(2,'0')+'-'
+    +String(now.getUTCDate()).padStart(2,'0')+'T'
+    +String(now.getUTCHours()).padStart(2,'0')+':00';
+  var nowIdx=0;
+  for(var i=0;i<burzeHours.length;i++){
+    if(burzeHours[i]<=nowStr)nowIdx=i; else break;
+  }
+
+  var max=parseInt(slider.max)||71;
+  var pct=nowIdx/max;  // 0..1
+  var sliderRect=slider.getBoundingClientRect();
+  var thumbW=16; // px szerokość kciuka
+  var trackW=sliderRect.width-thumbW;
+  var px=thumbW/2+pct*trackW;
+
+  marker.style.left=(slider.offsetLeft+px-1)+'px';
+  marker.style.display='block';
+}
 
 window.onload=function(){startGPS();};
 </script>
