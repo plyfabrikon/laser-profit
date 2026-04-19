@@ -2208,17 +2208,23 @@ function setupMapClick(){
   });
 }
 
-function buildWxUrl(lt,ln,minimal){
-  var currentVars="temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,dew_point_2m,cloud_cover";
-  var hourlyVars=minimal
-    ?"temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,dew_point_2m,cape,lifted_index,cloud_cover"
-    :"temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,dew_point_2m,cape,lifted_index,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high";
-  var dailyVars=minimal
-    ?"weather_code,temperature_2m_max,temperature_2m_min"
-    :"weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max";
+function buildWxUrl(lt,ln,mode){
+  var currentVars="temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,dew_point_2m";
+  var hourlyVars="";
+  var dailyVars="weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max";
+
+  if(mode==='simple'){
+    hourlyVars="temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,dew_point_2m,cape,lifted_index";
+  } else if(mode==='hourly-only'){
+    hourlyVars="temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,dew_point_2m,cape,lifted_index";
+    currentVars="";
+  } else {
+    hourlyVars="temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,dew_point_2m,cape,lifted_index,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high";
+  }
+
   return "https://api.open-meteo.com/v1/forecast?latitude="+lt+"&longitude="+ln
-    +"&current="+currentVars
-    +"&hourly="+hourlyVars
+    +(currentVars?"&current="+currentVars:"")
+    +(hourlyVars?"&hourly="+hourlyVars:"")
     +"&daily="+dailyVars
     +"&wind_speed_unit=kmh&timezone=auto&forecast_days=7";
 }
@@ -2276,8 +2282,9 @@ function requestWxData(lt,ln,onSuccess,onError){
     });
   }
 
-  fetchJson(buildWxUrl(lt,ln,false))
-    .catch(function(){return fetchJson(buildWxUrl(lt,ln,true));})
+  fetchJson(buildWxUrl(lt,ln,'simple'))
+    .catch(function(){return fetchJson(buildWxUrl(lt,ln,'full'));})
+    .catch(function(){return fetchJson(buildWxUrl(lt,ln,'hourly-only'));})
     .then(onSuccess)
     .catch(onError);
 }
@@ -2287,10 +2294,11 @@ function fetchWxForPoint(lt,ln){
   requestWxData(lt,ln,function(d){
     updAll(d);
     pi("p-dat","ok","PUNKT LIVE");
-  },function(){
+  },function(err){
     pi("p-dat","al","BŁĄD");
     var desc=document.getElementById("wx-desc-txt");
-    if(desc)desc.textContent="Brak danych pogodowych";
+    if(desc)desc.textContent="Open-Meteo: "+((err&&err.message)?err.message:"Brak danych pogodowych");
+    if(window.console&&console.error)console.error('Open-Meteo point error:',err);
   });
 }
 
@@ -2319,10 +2327,11 @@ function fetchWx(lt,ln){
     updAll(d);pi("p-dat","ok","LIVE");
     document.getElementById("upd").textContent=pd(new Date().getHours())+":"+pd(new Date().getMinutes());
     hookUpdAll();
-  },function(){
+  },function(err){
     pi("p-dat","al","BŁĄD");
     var desc=document.getElementById("wx-desc-txt");
-    if(desc)desc.textContent="Brak danych pogodowych";
+    if(desc)desc.textContent="Open-Meteo: "+((err&&err.message)?err.message:"Brak danych pogodowych");
+    if(window.console&&console.error)console.error('Open-Meteo live error:',err);
   });
 }
 setInterval(function(){if(uLat)fetchWx(uLat,uLon);},15*60*1000);
