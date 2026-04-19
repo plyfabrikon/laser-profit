@@ -3403,11 +3403,11 @@ function updateNowMarker(){
 // ═══════════════════════════════════════════════════════
 var aiAlertLastUpdate = 0;
 var aiAlertCache = '';
-var AI_ALERT_INTERVAL = 8*60*60*1000;
+var AI_ALERT_INTERVAL = 60*60*1000; // co godzine
 
 function generateAIAlert(){
   var nowTs=Date.now();
-  if(nowTs-aiAlertLastUpdate < 8*60*1000 && aiAlertCache){
+  if(nowTs-aiAlertLastUpdate < 55*60*1000 && aiAlertCache){
     var el=document.getElementById('ai-alert-content');
     if(el)el.textContent=aiAlertCache;
     return;
@@ -3418,13 +3418,27 @@ function generateAIAlert(){
 
   // Zbierz dane dla Polski (lon 14-24.5, lat 49-55)
   var pointsAll=[];
+  // Znajdz indeks biezacej godziny w danych burzowych
+  var _nowAlert=new Date();
+  var _nowStrAlert=_nowAlert.getFullYear()+'-'
+    +String(_nowAlert.getMonth()+1).padStart(2,'0')+'-'
+    +String(_nowAlert.getDate()).padStart(2,'0')+'T'
+    +String(_nowAlert.getHours()).padStart(2,'0')+':00';
+  var nowHIdx=0;
+  if(burzeHours&&burzeHours.length){
+    for(var bi=0;bi<burzeHours.length;bi++){
+      if(burzeHours[bi]<=_nowStrAlert)nowHIdx=bi; else break;
+    }
+  }
+
   STORM_GRID.forEach(function(pt,idx){
     if(pt[1]>=14&&pt[1]<=24.5&&pt[0]>=49&&pt[0]<=55){
-      var d0=burzeData[idx]&&burzeData[idx][0];
-      var d3=burzeData[idx]&&burzeData[idx][3];
-      var d6=burzeData[idx]&&burzeData[idx][6];
-      var d12=burzeData[idx]&&burzeData[idx][12];
-      var d24=burzeData[idx]&&burzeData[idx][24];
+      // d0 = TERAZ (aktualny indeks godziny), nie pierwsza godzina danych
+      var d0=burzeData[idx]&&burzeData[idx][nowHIdx];
+      var d3=burzeData[idx]&&burzeData[idx][Math.min(nowHIdx+3,71)];
+      var d6=burzeData[idx]&&burzeData[idx][Math.min(nowHIdx+6,71)];
+      var d12=burzeData[idx]&&burzeData[idx][Math.min(nowHIdx+12,71)];
+      var d24=burzeData[idx]&&burzeData[idx][Math.min(nowHIdx+24,71)];
       if(d0) pointsAll.push({
         lat:pt[0],lon:pt[1],
         region:getRegionName(pt[0],pt[1]),
@@ -3434,6 +3448,7 @@ function generateAIAlert(){
         dp:d0.dp||0, pp:d0.pp||0, lpi:+(d0.lpi||0).toFixed(1),
         prc:+(d0.prc||0).toFixed(1), shr:d0.shr||0,
         cin:d0.cin||0, rh700:d0.rh700||0,
+        prc1h: burzeData[idx]&&burzeData[idx][Math.min(nowHIdx+1,71)]?(+(burzeData[idx][Math.min(nowHIdx+1,71)].prc||0).toFixed(1)):0,
         prc3h: d3?(+(d3.prc||0).toFixed(1)):0,
         prc6h: d6?(+(d6.prc||0).toFixed(1)):0,
         prc12h: d12?(+(d12.prc||0).toFixed(1)):0
@@ -3526,7 +3541,7 @@ function generateAIAlert(){
   var lines=[];
   lines.push('KOMUNIKAT METEOROLOGICZNY -- IMGW-PIB');
   lines.push(dateStr+', godz. '+timeStr);
-  lines.push('Oparty na danych modelu ICON/DWD, aktualizacja co 3h');
+  lines.push('Sytuacja biezaca -- godz. '+timeStr+' | Dane: ICON/DWD icon_seamless | Aktualizacja co 1h');
   lines.push('');
   lines.push('=== OGOLNA SYTUACJA ATMOSFERYCZNA ===');
   lines.push('');
@@ -3560,7 +3575,8 @@ function generateAIAlert(){
         lines.push('Opady aktualne: '+prcNow+'.');
         // Trend opadowy
         var prcTrend='';
-        if(r.prc6h>r.prc+1)prcTrend=' Intensywnosc bedzie wzrastac (prognoza za 6h: '+r.prc6h+' mm/h).';
+        if(r.prc1h>r.prc+0.5)prcTrend=' Intensywnosc wzrasta (za 1h: '+r.prc1h+' mm/h, za 6h: '+r.prc6h+' mm/h).';
+        else if(r.prc6h>r.prc+1)prcTrend=' Intensywnosc bedzie wzrastac (prognoza za 6h: '+r.prc6h+' mm/h).';
         else if(r.prc6h<r.prc-1&&r.prc6h<0.5)prcTrend=' Opady bed powinny sie wycofywac w ciagu 6h.';
         if(prcTrend)lines.push('Tendencja opadowa:'+prcTrend);
       } else if(r.pp>30){
@@ -3644,7 +3660,7 @@ function generateAIAlert(){
   }
 
   lines.push('---');
-  lines.push('Dane: ICON/DWD via Open-Meteo | Aktualizacja: '+timeStr+' | Nastepny komunikat: ok. '+String((now.getHours()+3)%24).padStart(2,'0')+':00');
+  lines.push('Nastepna aktualizacja: ok. '+String((now.getHours()+1)%24).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+' | Dane: Open-Meteo ICON/DWD');
 
   var txt=lines.join('\n');
   aiAlertCache=txt;
