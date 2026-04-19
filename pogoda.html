@@ -438,7 +438,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
 .chart-title{font-size:.62rem;font-weight:700;letter-spacing:2px;color:var(--text2);text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:6px}
 .chart-title::after{content:'';flex:1;height:1px;background:var(--border)}
 /* Tabela godzinowa */
-.ph-col{display:flex;flex-direction:column;align-items:center;min-width:56px;padding:6px 4px;border-right:1px solid rgba(255,255,255,.04);cursor:default;transition:background .15s}
+.ph-col{display:flex;flex-direction:column;align-items:center;min-width:62px;padding:6px 4px;border-right:1px solid rgba(255,255,255,.04);cursor:default;transition:background .15s}
 .ph-col:hover{background:rgba(255,255,255,.05)}
 .ph-col.now{background:rgba(31,222,138,.08);border-right:2px solid #1fde8a}
 .ph-hour{font-size:.62rem;font-weight:700;color:var(--text2);margin-bottom:4px}
@@ -453,12 +453,20 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
 .ph-sep{width:100%;height:1px;background:rgba(255,255,255,.06);margin:3px 0}
 .ph-label{font-size:.45rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
 .chart-wrap{position:relative;height:160px}
-.fc7-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
-.fc7-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;transition:all .15s;border-top:3px solid transparent}
+.fc7-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:0;position:relative}
+.fc7-wrap{display:flex;flex-direction:column}
+.fc7-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 6px;text-align:center;cursor:pointer;transition:all .15s;border-top:3px solid transparent;position:relative}
+.fc7-card:hover{z-index:10}
+.fc7-card:hover .fc7-detail{display:block}
 .fc7-card:hover{border-color:var(--border);background:rgba(255,255,255,.05)}
 .fc7-card.today{border-top-color:var(--accent)}
 .fc7-day{font-size:.6rem;font-weight:700;color:var(--text2);margin-bottom:4px}
 .fc7-card.today .fc7-day{color:var(--accent)}
+.fc7-detail{display:none;position:absolute;top:100%;left:0;right:0;z-index:100;background:var(--bg2);border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;padding:8px 10px;font-size:.62rem;color:var(--text2);text-align:left;min-width:140px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.fc7-det-sep{height:1px;background:rgba(255,255,255,.06);margin:4px 0}
+.fc7-det-row{display:flex;justify-content:space-between;align-items:center;padding:2px 0;gap:6px;line-height:1.4}
+.fc7-det-row span{color:var(--text2)}
+.fc7-det-row b{color:#fff;font-weight:600;white-space:nowrap}
 .fc7-ico{font-size:1.5rem;margin-bottom:4px}
 .fc7-hi{font-size:.88rem;font-weight:700;color:#fff}
 .fc7-lo{font-size:.72rem;color:var(--text2)}
@@ -1400,6 +1408,7 @@ function fetchProgData(lt,ln){
     +',wind_speed_10m,wind_gusts_10m,relative_humidity_2m,uv_index'
     +'&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max'
     +',uv_index_max,sunrise,sunset,apparent_temperature_max,apparent_temperature_min'
+    +',precipitation_sum,snowfall_sum,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,sunshine_duration,et0_fao_evapotranspiration'
     +'&wind_speed_unit=kmh&timezone=auto&forecast_days=7')
   .then(function(r){return r.json();})
   .then(function(d){
@@ -1535,18 +1544,78 @@ function buildFc7(daily){
   var grid=document.getElementById('fc7-grid');
   if(!grid)return;
   grid.innerHTML='';
-  for(var i=0;i<Math.min(7,daily.weather_code.length);i++){
+  var days7=Math.min(7,daily.weather_code.length);
+  for(var i=0;i<days7;i++){
     var dt=new Date(daily.time[i]);
     var dayN=(i===0)?'Dziś':DAYS[dt.getDay()];
+    var pp=daily.precipitation_probability_max?daily.precipitation_probability_max[i]||0:0;
+    var sunrise=daily.sunrise?daily.sunrise[i]:'';
+    var sunset=daily.sunset?daily.sunset[i]:'';
+    var srTime=sunrise?(sunrise.length>10?sunrise.substring(11,16):sunrise):'';
+    var ssTime=sunset?(sunset.length>10?sunset.substring(11,16):sunset):'';
+    var uvMax=daily.uv_index_max?+(daily.uv_index_max[i]||0).toFixed(1):0;
+    var appMax=daily.apparent_temperature_max?Math.round(daily.apparent_temperature_max[i]):'--';
+    var appMin=daily.apparent_temperature_min?Math.round(daily.apparent_temperature_min[i]):'--';
+    var hiT=Math.round(daily.temperature_2m_max[i]);
+    var loT=Math.round(daily.temperature_2m_min[i]);
+    // Wiatr dzienny (max prędkość i dominujący kierunek)
+    var windMax=daily.wind_speed_10m_max?Math.round(daily.wind_speed_10m_max[i]||0):'--';
+    var windGust=daily.wind_gusts_10m_max?Math.round(daily.wind_gusts_10m_max[i]||0):'--';
+    var windDir=daily.wind_direction_10m_dominant?Math.round(daily.wind_direction_10m_dominant[i]||0):'--';
+    // Sumy opadów
+    var precSum=daily.precipitation_sum?+(daily.precipitation_sum[i]||0).toFixed(1):'--';
+    var snowSum=daily.snowfall_sum?+(daily.snowfall_sum[i]||0).toFixed(1):0;
+    // Dni słoneczne
+    var sunHours=daily.sunshine_duration?+(daily.sunshine_duration[i]/3600||0).toFixed(1):null;
+    // ET (evapotranspiracja — susza)
+    var et=daily.et0_fao_evapotranspiration?+(daily.et0_fao_evapotranspiration[i]||0).toFixed(1):null;
+    // Opis WMO
+    var wmoDesc=WMO[daily.weather_code[i]]||'';
+
+    // Kierunek wiatru jako tekst
+    function dirText(deg){
+      var dirs=['N','NE','E','SE','S','SW','W','NW'];
+      return dirs[Math.round(deg/45)%8];
+    }
+
     var div=document.createElement('div');
     div.className='fc7-card'+(i===0?' today':'');
-    var pp=daily.precipitation_probability_max[i]||0;
-    div.onclick=(function(idx2){return function(){openFcModal(idx2);};})(i);
-    div.innerHTML='<div class="fc7-day">'+dayN+'</div>'+
+    div.setAttribute('tabindex','0');
+
+    // Kolor temperatury
+    var tc=hiT||0;
+    var tclr=tc>=32?'#ff2200':tc>=25?'#ff6b35':tc>=18?'#ffe033':tc>=8?'#1fde8a':'#29d4ff';
+
+    div.innerHTML=
+      // Karta główna
+      '<div class="fc7-day">'+dayN+'</div>'+
       '<div class="fc7-ico">'+we(daily.weather_code[i])+'</div>'+
-      '<div class="fc7-hi">'+Math.round(daily.temperature_2m_max[i])+'°</div>'+
-      '<div class="fc7-lo">'+Math.round(daily.temperature_2m_min[i])+'°</div>'+
-      '<div class="fc7-pp">💧'+pp+'%</div>';
+      '<div class="fc7-hi" style="color:'+tclr+'">'+hiT+'°</div>'+
+      '<div class="fc7-lo">'+loT+'°</div>'+
+      '<div class="fc7-pp">💧'+pp+'%</div>'+
+      // Panel szczegółów - widoczny po hover
+      '<div class="fc7-detail">'+
+        '<div class="fc7-det-row">'+we(daily.weather_code[i])+' <b>'+wmoDesc+'</b></div>'+
+        '<div class="fc7-det-sep"></div>'+
+        '<div class="fc7-det-row"><span>🌡 Odcz. max</span><b>'+appMax+'°</b></div>'+
+        '<div class="fc7-det-row"><span>🌡 Odcz. min</span><b>'+appMin+'°</b></div>'+
+        '<div class="fc7-det-sep"></div>'+
+        (srTime?'<div class="fc7-det-row"><span>🌅 Wschód</span><b>'+srTime+'</b></div>':'')+
+        (ssTime?'<div class="fc7-det-row"><span>🌇 Zachód</span><b>'+ssTime+'</b></div>':'')+
+        (sunHours!==null?'<div class="fc7-det-row"><span>☀ Słońce</span><b>'+sunHours+'h</b></div>':'')+
+        '<div class="fc7-det-sep"></div>'+
+        '<div class="fc7-det-row"><span>🌧 Opady</span><b>'+precSum+'mm</b></div>'+
+        (snowSum>0?'<div class="fc7-det-row"><span>❄ Śnieg</span><b>'+snowSum+'cm</b></div>':'')+
+        '<div class="fc7-det-row"><span>💧 Szansa</span><b>'+pp+'%</b></div>'+
+        '<div class="fc7-det-sep"></div>'+
+        '<div class="fc7-det-row"><span>💨 Wiatr max</span><b>'+windMax+' km/h</b></div>'+
+        '<div class="fc7-det-row"><span>💨 Porywy</span><b>'+windGust+' km/h</b></div>'+
+        (windDir!=='--'?'<div class="fc7-det-row"><span>🧭 Kierunek</span><b>'+dirText(windDir)+'</b></div>':'')+
+        '<div class="fc7-det-sep"></div>'+
+        (uvMax?'<div class="fc7-det-row"><span>☀ UV max</span><b style="color:'+uvColor(uvMax)+'">'+uvMax+'</b></div>':'')+
+        (et!==null?'<div class="fc7-det-row"><span>🌱 Ewapotransp.</span><b>'+et+'mm</b></div>':'')+
+      '</div>';
+
     grid.appendChild(div);
   }
 }
@@ -3231,7 +3300,7 @@ function buildProgTable(d){
     col.innerHTML=
       dayStr+
       (isNow?'<div class="ph-now-label">TERAZ</div>':'')+
-      '<div class="ph-hour">'+String(hh).padStart(2,'0')+'</div>'+
+      '<div class="ph-hour">'+String(hh).padStart(2,'0')+':00</div>'+
       '<div class="ph-icon">'+wmoIcon(wmo[i]||0)+'</div>'+
       '<div class="ph-sep"></div>'+
       '<div class="ph-label">temp</div>'+
