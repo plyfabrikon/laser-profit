@@ -881,7 +881,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
       <div id="ai-alert-panel" style="background:linear-gradient(135deg,#0d1f35,#091628);border:1px solid rgba(41,212,255,.25);border-radius:10px;padding:14px 16px;flex-shrink:0">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
           <span style="font-size:1.1rem">🤖</span>
-          <span style="font-size:.6rem;font-weight:700;letter-spacing:2px;color:var(--blue2);text-transform:uppercase">Analiza AI — Polska</span>
+          <span style="font-size:.6rem;font-weight:700;letter-spacing:2px;color:var(--blue2);text-transform:uppercase">Komunikat meteorologiczny</span>
           <span id="ai-alert-time" style="font-size:.52rem;color:var(--text2);margin-left:auto">--</span>
           <button onclick="generateAIAlert()" style="font-size:.5rem;padding:2px 7px;border-radius:4px;border:1px solid rgba(41,212,255,.3);background:rgba(41,212,255,.06);color:var(--blue2);cursor:pointer">🔄</button>
         </div>
@@ -1164,7 +1164,7 @@ var blitzWS=null,blitzMarkers=[],blitzPath=null;
 var OWM_KEY="f65b3018ded1baf5c48413dbd6703953";
 var DAYS=["Niedz","Pon","Wt","Śr","Czw","Pt","Sob"];
 var DIRS=["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"];
-var WMO={0:"Bezchmurnie",1:"Prawie bezchmurnie",2:"Częściowe zachmurzenie",3:"Całkowite zachmurzenie",45:"Mgła",51:"Mżawka",61:"Deszcz słaby",63:"Deszcz",65:"Deszcz silny",80:"Deszcz przelotny",82:"Nawalnica",95:"Burza",96:"Burza z gradem",99:"Burza — duży grad"};
+var WMO={0:"Bezchmurnie",1:"Prawie bezchmurnie",2:"Częściowe zachmurzenie",3:"Całkowite zachmurzenie",45:"Mgła",51:"Mżawka",61:"Deszcz słaby",63:"Deszcz",65:"Deszcz silny",80:"Deszcz przelotny",82:"Nawalnica",95:"Burza",96:"Burza z gradem",99:"Burza -- duży grad"};
 var fcData=null; // przechowuje dane prognozy
 
 function pd(n){return String(n).padStart(2,"0");}
@@ -1197,7 +1197,7 @@ function showSec(el,s){
   }
   if(s==='prognoza')initPrognoza();
   if(s==='burze'){initBurze();if(mapBurze)setTimeout(function(){mapBurze.invalidateSize();},100);}
-  if(s==='ostrzezenia'){syncAlertPanel();if(!alertsLoaded)loadAlerts();if(burzeLoaded)generateAIAlert();}
+  if(s==='ostrzezenia'){syncAlertPanel();if(!alertsLoaded)loadAlerts();if(burzeLoaded&&typeof generateAIAlert==='function')setTimeout(generateAIAlert,500);}
   if(s==='wiatr')initWiatr();
   if(s==='aktualnosci'){syncNewsPanel();loadNews();}
   if(s==='radar'&&mapObj)setTimeout(function(){mapObj.invalidateSize();},100);
@@ -1281,7 +1281,7 @@ function sat24LoadData(){
       if(sl){sl.max=frames.length-1;sl.value=frames.length-1;}
       sat24FrameIdx=frames.length-1;
       sat24ShowRVFrame(sat24FrameIdx);
-      if(status)status.textContent='RainViewer IR · '+frames.length+' klatek';
+      if(status)status.textContent='RainViewer IR . '+frames.length+' klatek';
     } else {
       // Brak RainViewer satellite — użyj OWM clouds
       sat24ShowOWM();
@@ -1671,8 +1671,8 @@ function renderAlerts(data){
     div.className='alert-card '+cls;
     div.innerHTML='<div class="alert-title" style="color:'+(lvl>=3?'#ff3a3a':lvl>=2?'var(--accent)':'#ffe033')+'">'+(a.name||a.nazwa||a.type||'Ostrzeżenie')+'</div>'+
       '<div class="alert-body">'+(a.description||a.opis||a.content||'Brak opisu')+'</div>'+
-      '<div class="alert-meta">📍 '+(a.region||a.area||a.voivodeship||'Polska')+' · '+
-      (a.validFrom||a.time_start||'--')+' → '+(a.validTo||a.time_end||'--')+'</div>'+
+      '<div class="alert-meta">📍 '+(a.region||a.area||a.voivodeship||'Polska')+' . '+
+      (a.validFrom||a.time_start||'--')+' -> '+(a.validTo||a.time_end||'--')+'</div>'+
       '<div class="alert-badge" style="border-color:'+(lvl>=3?'#ff3a3a':lvl>=2?'var(--accent)':'#ffe033')+'">Stopień '+lvl+'</div>';
     right.appendChild(div);
   });
@@ -1689,9 +1689,9 @@ function renderAlertsFromCAPE(){
   var wspEl=document.getElementById('alert-wsp');
   var wsp=wspEl?parseInt(wspEl.textContent)||0:0;
 
-  if(cape>2500)alerts.push({cls:'red',lvl:3,title:'⚠ BURZA — Ryzyko ekstremalne',body:'CAPE '+cape+' J/kg. Możliwe intensywne burze z gradem i silnym wiatrem. Unikaj otwartej przestrzeni.',region:'Twoja lokalizacja'});
-  else if(cape>1500)alerts.push({cls:'orange',lvl:2,title:'⚡ Ryzyko burzowe — Stopień 2',body:'CAPE '+cape+' J/kg. Możliwe burze, silne opady, grad. Zalecana ostrożność.',region:'Twoja lokalizacja'});
-  else if(cape>500)alerts.push({cls:'yellow',lvl:1,title:'🌩 Ryzyko burzowe — Stopień 1',body:'CAPE '+cape+' J/kg. Warunki sprzyjające konwekcji. Możliwe przelotne burze.',region:'Twoja lokalizacja'});
+  if(cape>2500)alerts.push({cls:'red',lvl:3,title:'⚠ BURZA -- Ryzyko ekstremalne',body:'CAPE '+cape+' J/kg. Możliwe intensywne burze z gradem i silnym wiatrem. Unikaj otwartej przestrzeni.',region:'Twoja lokalizacja'});
+  else if(cape>1500)alerts.push({cls:'orange',lvl:2,title:'⚡ Ryzyko burzowe -- Stopień 2',body:'CAPE '+cape+' J/kg. Możliwe burze, silne opady, grad. Zalecana ostrożność.',region:'Twoja lokalizacja'});
+  else if(cape>500)alerts.push({cls:'yellow',lvl:1,title:'🌩 Ryzyko burzowe -- Stopień 1',body:'CAPE '+cape+' J/kg. Warunki sprzyjające konwekcji. Możliwe przelotne burze.',region:'Twoja lokalizacja'});
   else alerts.push({cls:'green',lvl:0,title:'✅ Brak ostrzeżeń burzowych',body:'Warunki atmosferyczne spokojne. Niska aktywność konwekcyjna.',region:'Twoja lokalizacja'});
 
   if(wsp>60)alerts.push({cls:'orange',lvl:2,title:'💨 Silny wiatr',body:'Prędkość wiatru '+wsp+' km/h. Możliwe szkody.',region:'Twoja lokalizacja'});
@@ -1800,22 +1800,22 @@ function loadNews(){
     {title:'Aktualne ostrzeżenia meteorologiczne IMGW',
      body:'Sprawdź ostrzeżenia dla swojego regionu w zakładce OSTRZEŻENIA. IMGW-PIB wydaje ostrzeżenia 1., 2. i 3. stopnia dla różnych zjawisk.',
      src:'IMGW-PIB',time:'Dziś',url:'https://www.imgw.pl/'},
-    {title:'Prognoza pogody dla Polski — Open-Meteo',
+    {title:'Prognoza pogody dla Polski -- Open-Meteo',
      body:'Dane pogodowe pobierane są z modeli GFS/ICON w rozdzielczości 0.1°. Aktualizacja co 15 minut. Dokładność prognozy najwyższa do 3 dni.',
      src:'Open-Meteo',time:'Live',url:'https://open-meteo.com/'},
-    {title:'Radar opadów — RainViewer API',
+    {title:'Radar opadów -- RainViewer API',
      body:'Mapa radarowa aktualizowana co 5-10 minut. Dane z sieci radarów EUMETNET, NEXRAD, BOM i innych. Opóźnienie ~5 min.',
      src:'RainViewer',time:'Live',url:'https://rainviewer.com/'},
-    {title:'Wyładowania atmosferyczne — Blitzortung.org',
+    {title:'Wyładowania atmosferyczne -- Blitzortung.org',
      body:'Sieć detektorów wyładowań atmosferycznych działająca na zasadzie triangulacji. Pokrycie: Europa, Ameryka Północna, Australia.',
      src:'Blitzortung',time:'Live',url:'https://www.blitzortung.org/'},
-    {title:'Satelita IR — EUMETSAT Meteosat',
+    {title:'Satelita IR -- EUMETSAT Meteosat',
      body:'Zdjęcia podczerwieni z satelity Meteosat-12. Aktualizacja co 15 minut. Białe obszary = zimne chmury wysokie (Cb, Ci). Ciemne = ciepłe niskie.',
      src:'EUMETSAT',time:'Co 15min',url:'https://www.eumetsat.int/'},
-    {title:'Sezon burzowy w Polsce — statystyki',
-     body:'Polska leży w strefie umiarkowanej — sezon burzowy trwa od maja do września. Najwięcej burz w lipcu i sierpniu, głównie w rejonach podgórskich.',
+    {title:'Sezon burzowy w Polsce -- statystyki',
+     body:'Polska leży w strefie umiarkowanej -- sezon burzowy trwa od maja do września. Najwięcej burz w lipcu i sierpniu, głównie w rejonach podgórskich.',
      src:'Klimat.pl',time:'Statystyki',url:'https://klimat.imgw.pl/'},
-    {title:'CAPE — indeks niestabilności atmosfery',
+    {title:'CAPE -- indeks niestabilności atmosfery',
      body:'CAPE (Convective Available Potential Energy) mierzy energię dostępną dla konwekcji. CAPE > 1500 J/kg = ryzyko silnych burz. > 3000 J/kg = tornada.',
      src:'Meteo EDU',time:'Edukacja',url:'#'},
     {title:'Jak czytać kolory radaru pogodowego?',
@@ -2102,7 +2102,7 @@ function testBlitz(){
 function updateViewCounter(){
   // Wyładowania przez iframe — brak dostępu do markerów
   var el=document.getElementById("blitz-view-count");
-  if(el)el.textContent="—";
+  if(el)el.textContent="--";
 }
 
 // ═══════════════════════════════════════════
@@ -2284,7 +2284,7 @@ function updAll(d){
   if(wdr!=null){
     var dirStr=dc(wdr);
     document.getElementById("w-dir").textContent=dirStr+" ("+Math.round(wdr)+"°)";
-    document.getElementById("w-dir-lbl").textContent="km/h · "+dirStr;
+    document.getElementById("w-dir-lbl").textContent="km/h . "+dirStr;
     document.getElementById("w-bft").textContent="B"+bf(wsp||0);
     // Kompas
     var needle=document.getElementById("wneedle");
@@ -2372,7 +2372,7 @@ function updFC(d){
 
 function openFcModal(idx){
   var d2=fcDailyData[idx];if(!d2)return;
-  document.getElementById("fc-modal-title").textContent=(idx===0?"Dziś":d2.day)+" — "+d2.date;
+  document.getElementById("fc-modal-title").textContent=(idx===0?"Dziś":d2.day)+" -- "+d2.date;
   document.getElementById("fc-modal-body").innerHTML=
     "<div class='fc-modal-item'><div class='fc-modal-lbl'>Ikona</div><div class='fc-modal-val' style='font-size:2rem'>"+we(d2.cod)+"</div></div>"+
     "<div class='fc-modal-item'><div class='fc-modal-lbl'>Opis</div><div class='fc-modal-val' style='font-size:.8rem'>"+WMO[d2.cod]+"</div></div>"+
@@ -2470,7 +2470,7 @@ function calcStormProb(cape,li,cin,prc,wmo,shr,lpi,rh700,updraft,dp,lapseRate,pp
   else if(wmo>=51) prob=Math.max(prob,12); // mżawka
 
   // ── 2. LPI — Lightning Potential Index (ICON-D2, najdokładniejszy) ───
-  // Wartości typowe przy burzach nad PL/DE: 0.5-15 J/kg·m/s
+  // Wartości typowe przy burzach nad PL/DE: 0.5-15 J/kg*m/s
   if(lpi>=15)      prob=Math.max(prob,92);
   else if(lpi>=8)  prob=Math.max(prob,82);
   else if(lpi>=4)  prob=Math.max(prob,65);
@@ -2729,7 +2729,8 @@ function loadBurzeData(force){
         // Pre-build wszystkich 72 gridów w tle
         prebuildAllGrids(function(){
           redrawBurze();
-          scheduleAIAlert(); // generuj analizę AI po załadowaniu danych
+          // Generuj analizę AI po załadowaniu danych (z opóźnieniem żeby dane były gotowe)
+          setTimeout(function(){if(typeof generateAIAlert==='function')generateAIAlert();},2500);
         });
       }
     })
@@ -3139,7 +3140,7 @@ function updateBurzePanel(d){
   if(fill){fill.style.width=d.prob+'%';fill.style.background=col.fill;}
   if(val){
     val.style.color=col.fill;
-    val.textContent=d.prob+'% — '+
+    val.textContent=d.prob+'% -- '+
       (d.prob>=80?'Ekstremalne ⚡⚡':d.prob>=60?'Wysokie ⚡':
        d.prob>=40?'Umiarkowane':d.prob>=20?'Niskie':'Brak ryzyka');
   }
@@ -3230,7 +3231,7 @@ function initBurze(){
   burzeRefreshInt=setInterval(function(){
     burzeLoaded=false;
     loadBurzeData(true);
-    generateAIAlert(); // odśwież też analizę AI
+    if(typeof generateAIAlert==="function")generateAIAlert();
   },3*60*60*1000);
 
   // Przerysowanie canvas co 15 min — przesuwa suwak do aktualnej godziny
@@ -3351,7 +3352,7 @@ function buildProgTable(d){
       '<div class="ph-feel">odcz. '+feelVal+'°</div>'+
       '<div class="ph-sep"></div>'+
       '<div class="ph-label">deszcz</div>'+
-      '<div class="ph-rain">'+(prcVal>0?prcVal.toFixed(1)+'mm':'—')+'</div>'+
+      '<div class="ph-rain">'+(prcVal>0?prcVal.toFixed(1)+'mm':'--')+'</div>'+
       '<div class="ph-pp" style="color:'+ppColor+'">'+ppVal+'%</div>'+
       '<div class="ph-sep"></div>'+
       '<div class="ph-label">wiatr</div>'+
@@ -3405,165 +3406,99 @@ var aiAlertCache = '';
 var AI_ALERT_INTERVAL = 8*60*60*1000;
 
 function generateAIAlert(){
-  var now=Date.now();
-  if(now-aiAlertLastUpdate < 10*60*1000 && aiAlertCache){
-    document.getElementById('ai-alert-content').textContent=aiAlertCache;
+  var nowTs=Date.now();
+  if(nowTs-aiAlertLastUpdate < 10*60*1000 && aiAlertCache){
+    var el=document.getElementById('ai-alert-content');
+    if(el)el.textContent=aiAlertCache;
     return;
   }
-  var content=document.getElementById('ai-alert-content');
-  var timeEl=document.getElementById('ai-alert-time');
-  if(content)content.innerHTML='<span style="color:var(--text2)">⏳ Analizuję dane i sprawdzam ostrzeżenia IMGW...</span>';
+  var elContent=document.getElementById('ai-alert-content');
+  var elTime=document.getElementById('ai-alert-time');
+  if(elContent)elContent.innerHTML='<span style="color:var(--text2)">Pobieram dane i generuję komunikat...</span>';
 
-  // Zbierz dane dla CAŁEJ Polski — wszystkie punkty
+  // Zbierz dane dla Polski
   var pointsAll=[];
   STORM_GRID.forEach(function(pt,idx){
     if(pt[1]>=14&&pt[1]<=24.5&&pt[0]>=49&&pt[0]<=55){
       var d0=burzeData[idx]&&burzeData[idx][0];
-      var d3=burzeData[idx]&&burzeData[idx][3];
       var d6=burzeData[idx]&&burzeData[idx][6];
       var d12=burzeData[idx]&&burzeData[idx][12];
       var d24=burzeData[idx]&&burzeData[idx][24];
       if(d0) pointsAll.push({
         lat:pt[0],lon:pt[1],
         region:getRegionName(pt[0],pt[1]),
-        p0:d0.prob, p3:d3?d3.prob:0, p6:d6?d6.prob:0,
+        p0:d0.prob, p6:d6?d6.prob:0,
         p12:d12?d12.prob:0, p24:d24?d24.prob:0,
         wmo:d0.wmo, cape:d0.cape, li:d0.li,
-        dp:d0.dp, pp:d0.pp, lpi:d0.lpi,
-        prc:d0.prc, cin:d0.cin, rh700:d0.rh700
+        dp:d0.dp, pp:d0.pp, lpi:d0.lpi, prc:d0.prc
       });
     }
   });
 
-  // Grupuj po regionach — znajdź max prob dla każdego
   var regionMap={};
   pointsAll.forEach(function(p){
     var r=p.region;
     if(!regionMap[r]||regionMap[r].p0<p.p0) regionMap[r]=p;
   });
 
-  // Buduj opis danych dla AI
-  var now_str=new Date().toLocaleString('pl-PL',{
-    weekday:'long',day:'numeric',month:'long',
-    hour:'2-digit',minute:'2-digit'
-  });
-
+  var now_str=new Date().toLocaleString('pl-PL',{weekday:'long',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'});
   var regions=Object.values(regionMap).sort(function(a,b){return b.p0-a.p0;});
 
-  var dataDesc='=== DANE METEOROLOGICZNE POLSKA — '+now_str+' ===
-
-';
-  dataDesc+='FORMAT: Region | Ryzyko burzy teraz→+3h→+6h→+12h→+24h | WMO | CAPE J/kg | LI | DP°C | PP% | LPI | Opady mm/h
-
-';
-
+  var dataLines=[];
   regions.forEach(function(p){
     var risk=p.p0>=60?'WYSOKIE':p.p0>=40?'UMIARKOWANE':p.p0>=20?'NISKIE':'BRAK';
-    dataDesc+=p.region+': '+risk+' ('+p.p0+'%→'+p.p3+'%→'+p.p6+'%→'+p.p12+'%→'+p.p24+'%) ';
-    dataDesc+='WMO='+p.wmo+' CAPE='+p.cape+' LI='+p.li+' DP='+p.dp+'°C PP='+p.pp+'% LPI='+p.lpi+' Prc='+p.prc+'mm
-';
+    dataLines.push(p.region+': '+risk+' (teraz='+p.p0+'% za6h='+p.p6+'% za12h='+p.p12+'% za24h='+p.p24+'%) WMO='+p.wmo+' CAPE='+p.cape+' LPI='+p.lpi+' DP='+p.dp+'C PP='+p.pp+'%');
   });
 
-  // Znajdź trend — gdzie rośnie ryzyko
-  var growing=regions.filter(function(p){return p.p6>p.p0+15;});
-  var declining=regions.filter(function(p){return p.p6<p.p0-15;});
-
-  if(growing.length){
-    dataDesc+='
-ROSNĄCE ZAGROŻENIE (za 6h): '+growing.map(function(p){return p.region+' (+'+Math.round(p.p6-p.p0)+'pp)';}).join(', ');
-  }
-  if(declining.length){
-    dataDesc+='
-SPADAJĄCE ZAGROŻENIE (za 6h): '+declining.map(function(p){return p.region+' (-'+Math.round(p.p0-p.p6)+'pp)';}).join(', ');
-  }
-
+  var growing=regions.filter(function(p){return p.p6>p.p0+15;}).map(function(p){return p.region;});
+  var declining=regions.filter(function(p){return p.p6<p.p0-15;}).map(function(p){return p.region;});
   var highRisk=regions.filter(function(p){return p.p0>=40;});
-  dataDesc+='
 
-Liczba zagrożonych regionów (>40%): '+highRisk.length+'/'+regions.length;
-
-  var prompt=
-    'Jesteś doświadczonym synoptą meteorologicznym IMGW-PIB. Na podstawie poniższych danych z modelu ICON napisz SZCZEGÓŁOWY komunikat meteorologiczny dla Polski.
-
-'+
-    'WYMAGANIA:
-'+
-    '1. Zacznij od KRÓTKIEGO podsumowania ogólnej sytuacji synoptycznej (2-3 zdania)
-'+
-    '2. Opisz zagrożenia REGIONAMI — dla każdego zagrożonego regionu osobny akapit z:
-'+
-    '   - nazą regionu boldem (*Region*:)
-'+
-    '   - typem zjawisk (burze, ulewny deszcz, silny wiatr, grad, upał, mróz itp.)
-'+
-    '   - prognozowanym czasem wystąpienia (teraz / za X godzin / jutro)
-'+
-    '   - intensywnością i ewentualnymi skutkami
-'+
-    '3. Opisz TENDENCJĘ — jak sytuacja będzie się zmieniać przez 24h
-'+
-    '4. Dodaj WSKAZÓWKI dla ludności — co robić, na co uważać
-'+
-    '5. Na końcu krótka wzmianka o regionach bez zagrożeń
-
-'+
-    'Pisz naturalnym językiem, bez oznaczeń technicznych. Minimum 300 słów. '+
-    'Sprawdź też aktualne ostrzeżenia IMGW na imgw.pl i dołącz informacje o ewentualnych aktywnych ostrzeżeniach.
-
-'+
-    dataDesc;
+  var prompt=[
+    'You are a Polish meteorologist. Write a detailed weather warning bulletin for Poland in Polish language.',
+    'Time: '+now_str,
+    'Data from ICON model:',
+    dataLines.join('\n'),
+    growing.length?'Risk increasing in 6h: '+growing.join(', '):'',
+    declining.length?'Risk decreasing in 6h: '+declining.join(', '):'',
+    'Regions at risk (>40%): '+highRisk.length,
+    '',
+    'Write in Polish. Include: 1) General synoptic situation, 2) Threatened regions with phenomena type and timing, 3) 24h trend, 4) Public safety advice, 5) Safe regions.',
+    'Minimum 300 words. Natural meteorologist style. Do not mention AI or language models.'
+  ].filter(Boolean).join('\n');
 
   fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
       model:'claude-sonnet-4-20250514',
-      max_tokens:1000,
-      tools:[{type:'web_search_20250305',name:'web_search'}],
+      max_tokens:1200,
       messages:[{role:'user',content:prompt}]
     })
   })
   .then(function(r){return r.json();})
   .then(function(d){
-    // Złóż tekst ze wszystkich bloków
-    var text='';
+    var txt='';
     if(d.content&&d.content.length){
-      d.content.forEach(function(block){
-        if(block.type==='text') text+=block.text;
-      });
+      d.content.forEach(function(b){if(b.type==='text')txt+=b.text;});
     }
-    if(!text) text='Brak odpowiedzi z modelu AI.';
-
-    // Formatowanie — zamień *tekst* na pogrubienie
-    text=text.replace(/[*_]/g,'');
-
-    aiAlertCache=text;
+    if(d.error){txt='Błąd: '+d.error.message;}
+    if(!txt)txt='Brak odpowiedzi.';
+    txt=txt.replace(/[*_#]/g,'');
+    aiAlertCache=txt;
     aiAlertLastUpdate=Date.now();
-    if(content)content.textContent=text;
-    if(timeEl){
-      var t=new Date();
-      timeEl.textContent='Akt. '+String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');
-    }
+    if(elContent)elContent.textContent=txt;
+    if(elTime){var t=new Date();elTime.textContent='Akt. '+String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');}
   })
   .catch(function(e){
-    if(content)content.innerHTML='<span style="color:#ff6b35">⚠ Błąd generowania analizy.</span>';
+    if(elContent)elContent.textContent='Nie udało się pobrać komunikatu. Sprawdź połączenie.';
+    console.error('Alert error:',e);
   });
 }
-
-// Wywołaj gdy dane burzowe są załadowane
-var _aiGenScheduled=false;
-function scheduleAIAlert(){
-  if(_aiGenScheduled)return;
-  _aiGenScheduled=true;
-  setTimeout(function(){
-    if(burzeLoaded) generateAIAlert();
-  },2000);
-}
-
 // Auto-generuj co 8h gdy otwarta zakładka ostrzeżenia
 setInterval(function(){
   if(currentSection==='ostrzezenia'&&burzeLoaded){
-    generateAIAlert();
+    if(typeof generateAIAlert==="function")generateAIAlert();
   }
 },AI_ALERT_INTERVAL);
 
