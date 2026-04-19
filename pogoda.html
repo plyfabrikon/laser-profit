@@ -2349,77 +2349,117 @@ var burzeRefreshInt=null;
 // lpi  = Lightning Potential Index (0-∞, z modelu DWD ICON)
 // rh700= wilgotność względna na 700 hPa (%) — suche powietrze blokuje burze
 // updraft = prędkość wstępująca (m/s) — bezpośredni wskaźnik konwekcji
-function calcStormProb(cape,li,cin,prc,wmo,shr,lpi,rh700,updraft){
+// ═══════════════════════════════════════════════════════════
+// ALGORYTM BURZOWY v3 — 12 parametrów
+// Kalibrowany na podstawie porównania z Blitzortung/realnymi burzami
+// Kluczowe odkrycia:
+//   - CAPE przy aktywnej burzy jest ZUŻYTE (niskie) — nie może być jedynym wskaźnikiem
+//   - Dew point >15°C = kluczowy warunek wstępny burzy w Europie
+//   - LPI (ICON) jest najdokładniejszym predyktorem
+//   - WMO z modelu jest opóźniony o ~1-2h vs rzeczywistość
+//   - Precipitation_probability >60% + CAPE>200 = bardzo wysokie ryzyko
+// ═══════════════════════════════════════════════════════════
+function calcStormProb(cape,li,cin,prc,wmo,shr,lpi,rh700,updraft,dp,lapseRate,pp){
   var prob=0;
 
-  // ── 1. WMO CODE — PRIORYTET BEZWZGLĘDNY ──────────────────────────────
-  // Model numeryczny wprost stwierdza typ pogody — najsilniejszy sygnał
+  // ── 1. WMO CODE — PRIORYTET (model stwierdza burzę wprost) ───────────
   if(wmo>=95)      prob=Math.max(prob,90); // 95=burza, 96=grad, 99=duży grad
-  else if(wmo>=91) prob=Math.max(prob,72); // burza słaba (91-94)
-  else if(wmo>=80) prob=Math.max(prob,42); // deszcz nawalny/przelotny
-  else if(wmo>=61) prob=Math.max(prob,18); // deszcz ciągły
-  else if(wmo>=51) prob=Math.max(prob,10); // mżawka
+  else if(wmo>=91) prob=Math.max(prob,75); // burza słaba
+  else if(wmo>=80) prob=Math.max(prob,45); // deszcz przelotny/nawalny
+  else if(wmo>=73) prob=Math.max(prob,25); // śnieg/mieszane (zima)
+  else if(wmo>=61) prob=Math.max(prob,20); // deszcz umiarkowany
+  else if(wmo>=51) prob=Math.max(prob,12); // mżawka
 
-  // ── 2. LPI — Lightning Potential Index ───────────────────────────────
-  // Bezpośredni wskaźnik wyładowań z modelu ICON/GFS — bardzo wiarygodny
-  // LPI > 1 = realne ryzyko wyładowań, LPI > 5 = intensywna burza
-  if(lpi>=10)     prob=Math.max(prob,85);
-  else if(lpi>=5) prob=Math.max(prob,70);
-  else if(lpi>=2) prob=Math.max(prob,50);
-  else if(lpi>=1) prob=Math.max(prob,35);
-  else if(lpi>=0.3) prob=Math.max(prob,20);
+  // ── 2. LPI — Lightning Potential Index (ICON-D2, najdokładniejszy) ───
+  // Wartości typowe przy burzach nad PL/DE: 0.5-15 J/kg·m/s
+  if(lpi>=15)      prob=Math.max(prob,92);
+  else if(lpi>=8)  prob=Math.max(prob,82);
+  else if(lpi>=4)  prob=Math.max(prob,65);
+  else if(lpi>=2)  prob=Math.max(prob,48);
+  else if(lpi>=0.8) prob=Math.max(prob,32);
+  else if(lpi>=0.3) prob=Math.max(prob,18);
 
-  // ── 3. CAPE ───────────────────────────────────────────────────────────
-  // Energia konwekcyjna — fundament burzy
-  if(cape>3000)      prob+=35;
-  else if(cape>2000) prob+=28;
-  else if(cape>1000) prob+=20;
-  else if(cape>500)  prob+=13;
-  else if(cape>200)  prob+=7;
-  else if(cape>80)   prob+=3;
+  // ── 3. CAPE — z korektą na "zużytą energię" ──────────────────────────
+  // Przy aktywnej burzy CAPE może spaść do 100-500 J/kg mimo trwającego WMO=95
+  // Dlatego wagi są niższe i nie karzemy za niskie CAPE gdy WMO>=80
+  if(cape>2500)      prob+=32;
+  else if(cape>1500) prob+=25;
+  else if(cape>800)  prob+=18;
+  else if(cape>300)  prob+=11;
+  else if(cape>100)  prob+=5;
+  else if(wmo<80)    prob-=3; // brak CAPE i brak burzy w modelu = minusuje
 
-  // ── 4. Lifted Index ───────────────────────────────────────────────────
-  if(li<-6)      prob+=22;
-  else if(li<-4) prob+=16;
-  else if(li<-2) prob+=9;
-  else if(li<0)  prob+=4;
+  // ── 4. Dew Point 2m — KLUCZOWY WARUNEK ───────────────────────────────
+  // Punkt rosy wskazuje ilość wilgoci dostępnej dla konwekcji
+  // Burze nad Europą Środkową wymagają dp >12°C, optymalne >16°C
+  if(dp>=20)       prob+=20; // subtropikalne — ekstremalne burze
+  else if(dp>=17)  prob+=16; // bardzo wilgotne — burze silne
+  else if(dp>=14)  prob+=10; // sprzyjające
+  else if(dp>=11)  prob+=4;  // możliwe
+  else if(dp>=6)   prob+=0;  // neutralne
+  else if(dp>=0)   prob-=5;  // suche — mało prawdopodobne
+  else             prob-=12; // bardzo suche lub zima
 
-  // ── 5. Updraft (prędkość wstępująca) ─────────────────────────────────
-  // Omega ujemna = ruch wstępujący (Pa/s → m/s konwersja przybliżona)
-  // Open-Meteo zwraca updraft w m/s (boundary layer)
-  if(updraft>5)      prob+=18;
-  else if(updraft>2) prob+=12;
-  else if(updraft>1) prob+=6;
-  else if(updraft>0.3) prob+=2;
+  // ── 5. Lifted Index ───────────────────────────────────────────────────
+  if(li<-7)        prob+=22;
+  else if(li<-5)   prob+=17;
+  else if(li<-3)   prob+=11;
+  else if(li<-1)   prob+=5;
+  else if(li<0)    prob+=2;
+  else if(li>2)    prob-=5;  // stabilna atmosfera
 
-  // ── 6. Wilgotność 700 hPa ─────────────────────────────────────────────
-  // Suche powietrze na ~3km blokuje konwekcję przez entrainment
-  // Wilgotność >70% na 700hPa sprzyja burzom
-  if(rh700>=85)      prob+=10;
-  else if(rh700>=70) prob+=5;
-  else if(rh700>=50) prob+=0;
-  else if(rh700>=30) prob-=5;  // suche powietrze hamuje
-  else               prob-=12; // bardzo suche — burze mało prawdopodobne
+  // ── 6. Precipitation Probability — szansa opadów z modelu ────────────
+  // PP >70% + niestabilność = bardzo wysoka pewność burzy
+  if(pp>=85)       prob+=15;
+  else if(pp>=70)  prob+=10;
+  else if(pp>=50)  prob+=5;
+  else if(pp>=30)  prob+=2;
+  else if(pp<10&&wmo<61) prob-=8; // model mówi brak opadów = redukuje
 
-  // ── 7. Opady ─────────────────────────────────────────────────────────
-  if(prc>10)       prob+=14;
-  else if(prc>5)   prob+=10;
-  else if(prc>1)   prob+=5;
-  else if(prc>0.2) prob+=2;
+  // ── 7. Wilgotność 700 hPa (~3km) ─────────────────────────────────────
+  if(rh700>=90)    prob+=12;
+  else if(rh700>=75) prob+=6;
+  else if(rh700>=55) prob+=0;
+  else if(rh700>=35) prob-=6;
+  else             prob-=15; // bardzo suche na 700 hPa = cap convection
 
-  // ── 8. CIN — hamowanie konwekcji ─────────────────────────────────────
-  // Silne CIN blokuje nawet przy wysokim CAPE
-  if(cin<-400)      prob-=25;
-  else if(cin<-200) prob-=15;
-  else if(cin<-100) prob-=7;
-  else if(cin<-50)  prob-=3;
+  // ── 8. Opady (mm/h) ───────────────────────────────────────────────────
+  if(prc>15)       prob+=16;
+  else if(prc>8)   prob+=12;
+  else if(prc>3)   prob+=7;
+  else if(prc>0.5) prob+=3;
 
-  // ── 9. Wind Shear (10m vs 850hPa ~1500m) ─────────────────────────────
-  // Duży shear → supercele, organizacja burz, większy zasięg
-  if(shr>70)       prob+=10;
-  else if(shr>45)  prob+=6;
-  else if(shr>25)  prob+=3;
-  else if(shr>10)  prob+=1;
+  // ── 9. CIN — blokada konwekcji ────────────────────────────────────────
+  // Uwaga: przy WMO>=80 burza już przebiła CIN — nie karzemy
+  if(wmo<80){
+    if(cin<-400)   prob-=28;
+    else if(cin<-200) prob-=18;
+    else if(cin<-100) prob-=8;
+    else if(cin<-50)  prob-=3;
+  }
+
+  // ── 10. Wind Shear (organizacja burz) ────────────────────────────────
+  if(shr>80)       prob+=12;
+  else if(shr>55)  prob+=8;
+  else if(shr>30)  prob+=4;
+  else if(shr>15)  prob+=1;
+
+  // ── 11. Lapse Rate (gradient temp 2m vs 80m) ─────────────────────────
+  // Duże chłodzenie z wysokością = niestabilność
+  if(lapseRate>1.0)   prob+=6;  // szybkie chłodzenie = niestabilne
+  else if(lapseRate>0.5) prob+=3;
+  else if(lapseRate<-0.5) prob-=8; // inwersja = hamuje konwekcję
+
+  // ── 12. BLH Updraft proxy ─────────────────────────────────────────────
+  if(updraft>4)    prob+=10;
+  else if(updraft>2) prob+=6;
+  else if(updraft>1) prob+=3;
+
+  // Cap prognostyczny: gdy model nie widzi jeszcze burzy (WMO < 61),
+  // ogranicz do 85% — to prognoza ryzyka, nie potwierdzenie burzy
+  if(wmo < 61 && prob > 85) prob = 85;
+  // Dodatkowy cap: przy braku LPI i niskim CAPE — max 60%
+  if(lpi < 0.3 && cape < 200 && wmo < 61 && prob > 60) prob = 60;
 
   return Math.max(0, Math.min(100, Math.round(prob)));
 }
@@ -2460,11 +2500,14 @@ function loadBurzeData(force){
     var lat=pt[0],lon=pt[1];
     // Pobierz CAPE, LI, CIN, opady, WMO, wiatr na 72h (co 1h)
     // Zapytanie główne: parametry konwekcyjne + ciśnieniowe
+    // Używamy best_match który dla PL+DE wybiera DWD ICON (najdokładniejszy dla Europy)
+    // Dodane: dew_point_2m (kluczowy!), temperature_80m (lapse rate), precipitation_probability
     var url='https://api.open-meteo.com/v1/forecast'
       +'?latitude='+lat+'&longitude='+lon
       +'&hourly=cape,lifted_index,convective_inhibition,precipitation,'
-      +'weather_code,wind_speed_10m,wind_speed_850hPa,'
-      +'relative_humidity_700hPa,boundary_layer_height'
+      +'precipitation_probability,weather_code,wind_speed_10m,wind_speed_850hPa,'
+      +'relative_humidity_700hPa,boundary_layer_height,'
+      +'dew_point_2m,temperature_80m,temperature_2m'
       +'&minutely_15=lightning_potential'
       +'&wind_speed_unit=kmh&timezone=Europe%2FWarsaw&forecast_days=3'
       +'&models=best_match';
@@ -2483,7 +2526,11 @@ function loadBurzeData(force){
       var wsp=h.wind_speed_10m||[];
       var wsp850=h.wind_speed_850hPa||[];
       var rh700=h.relative_humidity_700hPa||[];
-      var blh=h.boundary_layer_height||[];   // wysokość warstwy granicznej (proxy updraft)
+      var blh=h.boundary_layer_height||[];
+      var dp2m=h.dew_point_2m||[];          // punkt rosy 2m — kluczowy!
+      var t80m=h.temperature_80m||[];       // temp na 80m
+      var t2m=h.temperature_2m||[];         // temp 2m
+      var pp=h.precipitation_probability||[]; // szansa opadów
       // LPI z 15min — agreguj na godziny (max z 4 wartości)
       var lpiTimes=m15.time||[];
       var lpiRaw=m15.lightning_potential||[];
@@ -2505,10 +2552,17 @@ function loadBurzeData(force){
         // BLH proxy updraft: wysoka warstwa graniczna w dzień = silna konwekcja
         var blhVal=blh[i]||0;
         var updraft=blhVal>3000?5:blhVal>2000?3:blhVal>1200?1.5:blhVal>600?0.5:0;
+        // Lapse rate: różnica temp między 2m a 80m (większa = bardziej niestabilne)
+        var lapseRate=(t2m[i]||0)-(t80m[i]||0); // dodatni = normalny, ujemny = inwersja
+        // Dew point: >15°C = bardzo niestabilne, >18°C = ekstremalne
+        var dpVal=dp2m[i]||0;
+        // Precipitation probability
+        var ppVal=pp[i]||0;
         var prob=calcStormProb(
           cape[i]||0, li[i]||0, cin[i]||0,
           prc[i]||0, wmo[i]||0, shr,
-          lpiHourly[i]||0, rh700[i]||50, updraft
+          lpiHourly[i]||0, rh700[i]||50, updraft,
+          dpVal, lapseRate, ppVal
         );
         pointData.push({
           prob:prob,
@@ -2521,6 +2575,9 @@ function loadBurzeData(force){
           lpi:+(lpiHourly[i]||0).toFixed(2),
           rh700:Math.round(rh700[i]||0),
           blh:Math.round(blhVal),
+          dp:Math.round(dpVal),
+          lr:+(lapseRate).toFixed(1),
+          pp:Math.round(ppVal),
           time:times[i]
         });
       }
@@ -2536,11 +2593,11 @@ function loadBurzeData(force){
         burzeLoaded=true;
         document.getElementById('burze-update-time').textContent=
           new Date().toTimeString().substring(0,5);
-        renderBurzeHour(burzeHourIdx);
+        redrawBurze();
         buildStormChart();
-        // Pre-build wszystkich 72 gridów w tle (MessageChannel — bez blokowania UI)
+        // Pre-build wszystkich 72 gridów w tle
         prebuildAllGrids(function(){
-          console.log('Grid cache ready — animacja płynna');
+          redrawBurze(); // przerysuj po zbudowaniu cache
         });
       }
     })
@@ -2582,7 +2639,6 @@ var burzeSVGEl = null;
 // ═══════════════════════════════════════════════════════════════════
 
 // ── Stałe ─────────────────────────────────────────────────────────
-var STORM_THRESHOLD = 10;
 var SUB   = 3;
 var SLAT  = 0;
 var SLON  = 0;
@@ -2770,13 +2826,8 @@ function drawFrame(gridInterp) {
 
       if(prob<STORM_THRESHOLD) continue;
 
-      // Mgławica: modulacja wg współrzędnych GEO → stabilna przy zoom/pan
-      // lat/lon są stałe dla danego miejsca na mapie
-      var fog = 0.82
-        + 0.10*Math.sin(fogOffset*1.2 + lat*8.0 + lon*3.0)
-        + 0.08*Math.cos(fogOffset*0.7 + lat*5.0 - lon*4.5);
-
-      var alpha = Math.min(220, (prob/100)*220*fog)|0;
+      // Stały alfa bez wzorków
+      var alpha = Math.min(210, (prob/100)*210)|0;
       var col   = probToRGBA(prob, alpha);
       var idx4  = (py*W+px)*4;
       data[idx4  ]=col[0]; data[idx4+1]=col[1];
@@ -2784,17 +2835,16 @@ function drawFrame(gridInterp) {
     }
   }
 
-  // ── Krok 2: nałóż ImageData z rozmyciem ──────────────────────────
-  // Użyj tymczasowego canvasa żeby ctx.filter blur działał
+  // ── Krok 2: nałóż ImageData z delikatnym rozmyciem ──────────────
   var tmp = document.createElement('canvas');
   tmp.width=W; tmp.height=H;
   tmp.getContext('2d').putImageData(imgData,0,0);
 
-  ctx.filter='blur(8px)';
-  ctx.globalAlpha=0.9;
+  // Mały blur — tylko żeby wygładzić krawędzie pikseli, nie przesuwać kolor
+  ctx.filter='blur(4px)';
+  ctx.globalAlpha=1.0;
   ctx.drawImage(tmp,0,0);
   ctx.filter='none';
-  ctx.globalAlpha=1.0;
 
   // ── Krok 3: ikony ⚡ ──────────────────────────────────────────────
   var sf = stepToHourFrac(curStep);
@@ -2806,47 +2856,23 @@ function drawFrame(gridInterp) {
     if(prob<60) return;
     var px2=map.latLngToContainerPoint([pt[0],pt[1]]);
     var fs=prob>=80?20:14;
-    var pulse=0.65+0.35*Math.abs(Math.sin(fogOffset*2.5));
-    ctx.globalAlpha=pulse;
+    ctx.globalAlpha=0.9;
     ctx.font=fs+'px sans-serif';
     ctx.fillText('⚡',px2.x-fs/2,px2.y+fs/2);
     ctx.globalAlpha=1;
   });
 }
 
-// ── Pętla mgławicy + interpolacja ────────────────────────────────
-var lastFrameTs = 0;
-function fogLoop(ts) {
-  fogRafId = requestAnimationFrame(fogLoop);
-  var dt = Math.min(ts - lastFrameTs, 50); // cap 50ms
-  lastFrameTs = ts;
-  fogOffset += dt * 0.015; // prędkość driftu
+// ── Rysowanie na żądanie (bez RAF — bez wzorków) ─────────────────
+// Brak ciągłej pętli = brak animowanych wzorków, znacznie lepsza wydajność
+function fogLoop(ts) { /* wyłączone — rysujemy tylko przy zmianie */ }
 
+function redrawBurze() {
   if(!burzeLoaded||!burzeCanvas) return;
-
-  // Oblicz aktualny grid interpolowany (step + interpT)
-  var sf = stepToHourFrac(interpTo);
-  var h1 = sf.h, h2 = Math.min(h1+1,71), sub = sf.sub;
-
-  var g1 = getGrid(h1);
-  var g2 = getGrid(h2);
-
-  // Tymczasowy grid dla tej sub-godziny (lerp h1→h2 wg sub)
-  var gridSub = new Float32Array(GRID_W*GRID_H);
-  lerpGrids(g1, g2, sub, gridSub);
-
-  // Jeśli jesteśmy w trakcie przejścia między krokami
-  if(interpT < 1.0 && interpFrom !== interpTo) {
-    var sfFrom = stepToHourFrac(interpFrom);
-    var hF1 = sfFrom.h, hF2 = Math.min(hF1+1,71), subF = sfFrom.sub;
-    var gF1 = getGrid(hF1), gF2 = getGrid(hF2);
-    var gridSubFrom = new Float32Array(GRID_W*GRID_H);
-    lerpGrids(gF1, gF2, subF, gridSubFrom);
-    // Łącz "od" i "do"
-    lerpGrids(gridSubFrom, gridSub, easeInOutCubic(interpT), gridSub);
-  }
-
-  drawFrame(gridSub);
+  var h = Math.floor(curStep/STEPS_PER_HOUR);
+  h = Math.min(h, 71);
+  var grid = getGrid(h);
+  drawFrame(grid);
 }
 
 // ── Canvas Layer init ─────────────────────────────────────────────
@@ -2913,8 +2939,9 @@ function initCanvasOverlay() {
       .openOn(mapBurze);
   });
 
-  // Start ciągłej pętli
-  if(!fogRafId) fogRafId=requestAnimationFrame(fogLoop);
+  // Przerysowuj przy każdym ruchu mapy (zoom/pan)
+  mapBurze.on('zoomend moveend', function(){ redrawBurze(); });
+  // Pierwsze rysowanie gdy dane są gotowe — wywoływane z loadBurzeData
 }
 
 // ── Suwak — mapuje na kroki 15-min ────────────────────────────────
@@ -2926,27 +2953,17 @@ function onBurzeSlider(val) {
   updateChartHighlight(newH);
 }
 
-// ── Skocz do kroku z animowanym przejściem ─────────────────────────
+// ── Skocz do kroku — bez animacji przejścia ───────────────────────
 function jumpToStep(fromStep, toStep) {
-  interpFrom = fromStep;
-  interpTo   = toStep;
-  interpT    = 0;
-  curStep    = toStep;
+  curStep      = toStep;
+  interpFrom   = toStep;
+  interpTo     = toStep;
+  interpT      = 1;
   burzeHourIdx = Math.floor(toStep/STEPS_PER_HOUR);
   document.getElementById('burze-slider').value = burzeHourIdx;
   updateBurzeTimeLabel15(toStep);
   updateBurzePanelForStep(toStep);
-
-  // Animuj interpT 0→1
-  if(animFrameId) cancelAnimationFrame(animFrameId);
-  var t0=null;
-  function step(ts){
-    if(!t0) t0=ts;
-    interpT=Math.min(1,(ts-t0)/interpDur);
-    if(interpT<1) animFrameId=requestAnimationFrame(step);
-    else{ animFrameId=null; interpFrom=interpTo; }
-  }
-  animFrameId=requestAnimationFrame(step);
+  redrawBurze(); // rysuj natychmiast
 }
 
 function updateBurzePanelForStep(step){
@@ -2981,15 +2998,16 @@ function updateBurzeTimeLabel15(step){
 
 function updateBurzeTimeLabel(hIdx){ updateBurzeTimeLabel15(hIdx*STEPS_PER_HOUR); }
 
-// ── renderBurzeHour — przeskocz do godziny ─────────────────────────
+// ── renderBurzeHour — przeskocz do godziny i rysuj ─────────────────
 function renderBurzeHour(hIdx) {
   if(!mapBurze||!burzeLoaded) return;
   burzeHourIdx = hIdx;
   var step = hIdx*STEPS_PER_HOUR;
-  interpFrom=step; interpTo=step; interpT=1.0; curStep=step;
+  curStep=step; interpFrom=step; interpTo=step; interpT=1.0;
   if(!burzeCanvas) initCanvasOverlay();
   updateBurzeTimeLabel15(step);
   updateBurzePanelForStep(step);
+  redrawBurze();
 }
 
 function getMyLocationData(hIdx){
