@@ -2526,7 +2526,7 @@ function loadBurzeData(force){
       +'relative_humidity_700hPa,boundary_layer_height,'
       +'dew_point_2m,temperature_80m,temperature_2m'
       +'&minutely_15=lightning_potential'
-      +'&wind_speed_unit=kmh&timezone=UTC&forecast_days=3'
+      +'&wind_speed_unit=kmh&timezone=auto&forecast_days=3'
       +'&models=icon_seamless';
 
     fetch(url)
@@ -2609,13 +2609,13 @@ function loadBurzeData(force){
         document.getElementById('burze-loading').style.display='none';
         burzeLoaded=true;
         document.getElementById('burze-update-time').textContent=
-          new Date().toUTCString().substring(17,22)+' UTC';
+          new Date().toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'})+' (akt.)';
         // Znajdź indeks godziny odpowiadający TERAZ UTC
         var nowUtc=new Date();
-        var nowStr=nowUtc.getUTCFullYear()+'-'
-          +String(nowUtc.getUTCMonth()+1).padStart(2,'0')+'-'
-          +String(nowUtc.getUTCDate()).padStart(2,'0')+'T'
-          +String(nowUtc.getUTCHours()).padStart(2,'0')+':00';
+        var nowStr=nowUtc.getFullYear()+'-'
+          +String(nowUtc.getMonth()+1).padStart(2,'0')+'-'
+          +String(nowUtc.getDate()).padStart(2,'0')+'T'
+          +String(nowUtc.getHours()).padStart(2,'0')+':00';
         var nowIdx=0;
         if(burzeHours&&burzeHours.length){
           // Znajdź godzinę <= teraz
@@ -3265,10 +3265,10 @@ function updateNowMarker(){
 
   // Znajdź indeks teraźniejszości
   var now=new Date();
-  var nowStr=now.getUTCFullYear()+'-'
-    +String(now.getUTCMonth()+1).padStart(2,'0')+'-'
-    +String(now.getUTCDate()).padStart(2,'0')+'T'
-    +String(now.getUTCHours()).padStart(2,'0')+':00';
+  var nowStr=now.getFullYear()+'-'
+    +String(now.getMonth()+1).padStart(2,'0')+'-'
+    +String(now.getDate()).padStart(2,'0')+'T'
+    +String(now.getHours()).padStart(2,'0')+':00';
   var nowIdx=0;
   for(var i=0;i<burzeHours.length;i++){
     if(burzeHours[i]<=nowStr)nowIdx=i; else break;
