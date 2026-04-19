@@ -2209,10 +2209,10 @@ function setupMapClick(){
 }
 
 function buildWxUrl(lt,ln,minimal){
-  var currentVars="temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,dew_point_2m";
+  var currentVars="temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,dew_point_2m,cloud_cover";
   var hourlyVars=minimal
-    ?"cape,lifted_index"
-    :"cape,lifted_index,cloud_cover_low,cloud_cover_mid,cloud_cover_high";
+    ?"temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,dew_point_2m,cape,lifted_index,cloud_cover"
+    :"temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility,dew_point_2m,cape,lifted_index,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high";
   var dailyVars=minimal
     ?"weather_code,temperature_2m_max,temperature_2m_min"
     :"weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max";
@@ -2223,9 +2223,45 @@ function buildWxUrl(lt,ln,minimal){
     +"&wind_speed_unit=kmh&timezone=auto&forecast_days=7";
 }
 
+function normalizeWxPayload(d){
+  if(!d)return d;
+  if(d.current && (d.current.temperature_2m!=null || d.current.weather_code!=null)) return d;
+
+  var h=d.hourly||{};
+  var times=h.time||[];
+  if(!times.length) return d;
+
+  var now=new Date();
+  var nowStr=now.getFullYear()+'-'
+    +String(now.getMonth()+1).padStart(2,'0')+'-'
+    +String(now.getDate()).padStart(2,'0')+'T'
+    +String(now.getHours()).padStart(2,'0')+':00';
+  var idx=0;
+  for(var i=0;i<times.length;i++){
+    if(times[i]<=nowStr)idx=i; else break;
+  }
+
+  d.current={
+    temperature_2m:h.temperature_2m?h.temperature_2m[idx]:null,
+    relative_humidity_2m:h.relative_humidity_2m?h.relative_humidity_2m[idx]:null,
+    apparent_temperature:h.apparent_temperature?h.apparent_temperature[idx]:null,
+    precipitation:h.precipitation?h.precipitation[idx]:null,
+    weather_code:h.weather_code?h.weather_code[idx]:null,
+    pressure_msl:h.pressure_msl?h.pressure_msl[idx]:null,
+    wind_speed_10m:h.wind_speed_10m?h.wind_speed_10m[idx]:null,
+    wind_direction_10m:h.wind_direction_10m?h.wind_direction_10m[idx]:null,
+    wind_gusts_10m:h.wind_gusts_10m?h.wind_gusts_10m[idx]:null,
+    visibility:h.visibility?h.visibility[idx]:null,
+    dew_point_2m:h.dew_point_2m?h.dew_point_2m[idx]:null,
+    cloud_cover:h.cloud_cover?h.cloud_cover[idx]:null
+  };
+  return d;
+}
+
 function isValidWxPayload(d){
-  return !!(d && !d.error && d.current &&
-    (d.current.temperature_2m!=null || d.current.weather_code!=null));
+  var normalized=normalizeWxPayload(d);
+  return !!(normalized && !normalized.error && normalized.current &&
+    (normalized.current.temperature_2m!=null || normalized.current.weather_code!=null));
 }
 
 function requestWxData(lt,ln,onSuccess,onError){
@@ -2234,6 +2270,7 @@ function requestWxData(lt,ln,onSuccess,onError){
       if(!r.ok)throw new Error("HTTP "+r.status);
       return r.json();
     }).then(function(d){
+      d=normalizeWxPayload(d);
       if(!isValidWxPayload(d))throw new Error((d&&d.reason)||"Brak danych current");
       return d;
     });
