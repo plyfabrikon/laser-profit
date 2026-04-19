@@ -1205,7 +1205,7 @@ function showSec(el,s){
           if(burzeLoaded) redrawBurze();
         },400);
       }
-    },50);
+    },100);
   }
   if(s==='ostrzezenia'){syncAlertPanel();if(!alertsLoaded)loadAlerts();if(burzeLoaded&&typeof generateAIAlert==='function'){setTimeout(generateAIAlert,300);}else{var _elAI=document.getElementById('ai-alert-content');if(_elAI)_elAI.textContent='Oczekiwanie na dane modelu... Komunikat pojawi sie automatycznie.';} }
   if(s==='wiatr')initWiatr();
@@ -2594,11 +2594,8 @@ function initMapBurze(){
     {maxZoom:10,subdomains:'abcd'}).addTo(mapBurze);
   setTimeout(function(){
     mapBurze.invalidateSize();
-    setTimeout(function(){
-      mapBurze.invalidateSize();
-      initCanvasOverlay();
-    },300);
-  },100);
+    initCanvasOverlay();
+  },300);
 }
 // ── POBIERANIE DANYCH ────────────────────────────────────────────────
 function loadBurzeData(force){
