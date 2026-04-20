@@ -557,6 +557,10 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
     <span class="pill of" id="p-dat">DANE</span>
     <span class="pill of" id="p-rsk">RYZYKO</span>
     <span class="pill of" id="p-blk">BŁK</span>
+    <span style="font-size:.5rem;color:var(--text2);white-space:nowrap;border-left:1px solid var(--border);padding-left:8px;line-height:1.4;text-align:right">
+      źródło: <span style="color:var(--blue2);font-weight:600">Open-Meteo</span> ICON/DWD<br>
+      <span id="api-req-count" style="color:#1fde8a">3 req/otwarcie • limit: 600/min</span>
+    </span>
     <div class="clk" id="clk">--:-- UTC</div>
   </div>
 </div>
@@ -3000,6 +3004,8 @@ function loadBurzeData(force){
   var loaded=0;
   var progEl=document.getElementById('burze-progress');
 
+  var rateLimited = false;
+
   batches.forEach(function(batch, bIdx){
     var startIdx=bIdx*BATCH;
     var lats=batch.map(function(p){return p[0];}).join(',');
@@ -3015,19 +3021,27 @@ function loadBurzeData(force){
 
     fetch(url)
     .then(function(r){
-      if(r.status===429||r.status===403){
-        show429Error();
-        throw new Error('rate_limit_'+r.status);
+      if(r.status===429||r.status===403||r.status===503){
+        if(!rateLimited){ rateLimited=true; show429Error(); }
+        // Mimo błędu zlicz batch żeby onAllBatchesDone mógł się wywołać
+        batch.forEach(function(_,localIdx){ burzeData[startIdx+localIdx]=[]; loaded++; });
+        if(progEl) progEl.textContent=loaded+'/'+total;
+        batchesDone++;
+        if(batchesDone===batches.length) onAllBatchesDone();
+        return null;
       }
       return r.json();
     })
     .then(function(resp){
+      if(!resp) return; // już obsłużone wyżej (429 etc.)
+      // Sprawdź czy Open-Meteo zwróciło błąd w JSON
       if(resp&&resp.error){
-        // Open-Meteo zwraca {error:true, reason:"..."} przy blokadzie
-        if(resp.reason&&(resp.reason.indexOf('limit')!==-1||resp.reason.indexOf('exceed')!==-1)){
-          show429Error();
-          throw new Error('api_limit');
-        }
+        if(!rateLimited){ rateLimited=true; show429Error(); }
+        batch.forEach(function(_,localIdx){ burzeData[startIdx+localIdx]=[]; loaded++; });
+        if(progEl) progEl.textContent=loaded+'/'+total;
+        batchesDone++;
+        if(batchesDone===batches.length) onAllBatchesDone();
+        return;
       }
       // Open-Meteo zwraca array gdy wiele lokalizacji, obiekt gdy jedna
       var items=Array.isArray(resp)?resp:[resp];
@@ -3044,15 +3058,13 @@ function loadBurzeData(force){
       batchesDone++;
       if(batchesDone===batches.length) onAllBatchesDone();
     })
-    .catch(function(err){
-      if(err&&err.message&&err.message.indexOf('rate_limit')===0) return;
-      if(err&&err.message&&err.message==='api_limit') return;
-      // Inny błąd sieciowy — wypełnij puste dane
+    .catch(function(){
+      // Błąd sieciowy — wypełnij puste i licz dalej
       batch.forEach(function(_,localIdx){
         burzeData[startIdx+localIdx]=[];
         loaded++;
-        if(progEl) progEl.textContent=loaded+'/'+total;
       });
+      if(progEl) progEl.textContent=loaded+'/'+total;
       batchesDone++;
       if(batchesDone===batches.length) onAllBatchesDone();
     });
