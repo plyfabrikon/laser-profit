@@ -413,6 +413,15 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
 .storm-legend{display:flex;flex-direction:column;gap:4px;margin-top:8px}
 .storm-legend-row{display:flex;align-items:center;gap:8px;font-size:.62rem;color:var(--text2)}
 .storm-legend-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0}
+.rain-zone-card{margin-bottom:12px;padding:10px 11px;border-radius:8px;border:1px solid rgba(41,212,255,.18);background:linear-gradient(135deg,rgba(6,23,42,.98),rgba(5,16,30,.96))}
+.rain-zone-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.rain-zone-badge{font-size:.52rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--blue2)}
+.rain-zone-now{margin-left:auto;font-size:.78rem;font-family:monospace;font-weight:700;color:#9be7ff}
+.rain-zone-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.rain-zone-cell{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);border-radius:6px;padding:7px 8px}
+.rain-zone-lbl{font-size:.5rem;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:2px}
+.rain-zone-val{font-size:.9rem;font-weight:700;color:#fff;font-family:monospace}
+.rain-zone-desc{margin-top:8px;font-size:.58rem;line-height:1.6;color:var(--text2)}
 
 /* Status ładowania */
 .burze-loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:var(--text2);z-index:10;background:rgba(5,16,30,.9);padding:20px 30px;border-radius:10px;border:1px solid var(--border)}
@@ -941,6 +950,11 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
         <!-- Duża godzina -->
         <span id="burze-time-big" style="font-size:1.05rem;font-weight:800;color:#1fde8a;font-family:monospace;letter-spacing:1px;min-width:110px">Teraz</span>
         <button class="play-btn" id="burze-play-btn" onclick="toggleBurzeAnim()" title="Animuj">▶</button>
+        <div style="display:flex;gap:4px;align-items:center">
+          <button id="burze-mode-storm" onclick="setBurzeLayerMode('storm')" style="font-size:.56rem;padding:3px 9px;border-radius:999px;border:1px solid rgba(232,130,26,.45);background:rgba(232,130,26,.16);color:var(--accent);cursor:pointer">Burze</button>
+          <button id="burze-mode-rain" onclick="setBurzeLayerMode('rain')" style="font-size:.56rem;padding:3px 9px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--text2);cursor:pointer">Strefa opadowa</button>
+          <button id="burze-mode-rainanim" onclick="setBurzeLayerMode('rainanim')" style="font-size:.56rem;padding:3px 9px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.03);color:var(--text2);cursor:pointer">Strefa test anim.</button>
+        </div>
         <div style="display:flex;gap:4px;align-items:center;margin-left:auto">
           <span style="font-size:.55rem;color:var(--text2)">Dane:</span>
           <span style="font-size:.55rem;color:var(--blue2);font-family:monospace" id="burze-update-time">--</span>
@@ -961,13 +975,40 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
       <!-- Lewa kolumna info -->
       <div class="burze-left">
         <!-- Wykres prawdopodobieństwa -->
-        <div class="storm-chart-title">📊 Prawdopodob. burzy — Twoja lokalizacja</div>
+        <div class="storm-chart-title" id="storm-chart-title">📊 Prawdopodob. burzy — Twoja lokalizacja</div>
         <div class="storm-chart-wrap"><canvas id="chart-storm"></canvas></div>
 
         <div class="burze-info">
+          <div class="rain-zone-card">
+            <div class="rain-zone-head">
+              <span style="font-size:1rem">☔</span>
+              <span class="rain-zone-badge">Strefa opadowa modelu</span>
+              <span class="rain-zone-now" id="rain-zone-now">0.0 mm/h</span>
+            </div>
+            <div class="rain-zone-grid">
+              <div class="rain-zone-cell">
+                <div class="rain-zone-lbl">Status</div>
+                <div class="rain-zone-val" id="rain-zone-status">Brak opadu</div>
+              </div>
+              <div class="rain-zone-cell">
+                <div class="rain-zone-lbl">Prawd. opadu</div>
+                <div class="rain-zone-val" id="rain-zone-pp">0%</div>
+              </div>
+              <div class="rain-zone-cell">
+                <div class="rain-zone-lbl">WMO</div>
+                <div class="rain-zone-val" id="rain-zone-wmo">--</div>
+              </div>
+              <div class="rain-zone-cell">
+                <div class="rain-zone-lbl">Warstwa</div>
+                <div class="rain-zone-val" id="rain-zone-layer">Model 72h</div>
+              </div>
+            </div>
+            <div class="rain-zone-desc" id="rain-zone-desc">Warstwa opadowa korzysta z tych samych odświeżeń modelowych co mapa burz i pokazuje intensywność opadu dla wybranej godziny.</div>
+          </div>
+
           <!-- Główny wskaźnik -->
           <div class="storm-gauge">
-            <div class="storm-gauge-label">Ryzyko burzowe</div>
+            <div class="storm-gauge-label" id="storm-gauge-label">Ryzyko burzowe</div>
             <div class="storm-gauge-bar">
               <div class="storm-gauge-fill" id="sg-fill" style="width:0%"></div>
             </div>
@@ -1015,12 +1056,12 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
           </div>
 
           <!-- Legenda -->
-          <div style="font-size:.58rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Legenda mapy</div>
+          <div style="font-size:.58rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px" id="storm-legend-title">Legenda mapy</div>
           <div class="storm-legend">
-            <div class="storm-legend-row"><div class="storm-legend-dot" style="background:#ff8800;box-shadow:0 0 6px #ff8800">
-            <div class="storm-legend-row" style="margin-top:6px;border-top:1px solid rgba(255,255,255,.06);padding-top:5px"><div style="font-size:1.1rem">⚡</div><span style="font-size:.58rem;color:var(--text2)">Aktywne wyladowania (LPI)</span></div></div>40–60% Umiarkowane</div>
-            <div class="storm-legend-row"><div class="storm-legend-dot" style="background:#ff3a3a;box-shadow:0 0 6px #ff3a3a"></div>60–80% Wysokie ⚡</div>
-            <div class="storm-legend-row"><div class="storm-legend-dot" style="background:#cc00ff;box-shadow:0 0 8px #cc00ff"></div>80–100% Ekstremalne ⚡⚡</div>
+            <div class="storm-legend-row"><div class="storm-legend-dot" id="storm-legend-dot-1" style="background:#ff8800;box-shadow:0 0 6px #ff8800"></div><span id="storm-legend-text-1">40–60% Umiarkowane</span></div>
+            <div class="storm-legend-row"><div class="storm-legend-dot" id="storm-legend-dot-2" style="background:#ff3a3a;box-shadow:0 0 6px #ff3a3a"></div><span id="storm-legend-text-2">60–80% Wysokie ⚡</span></div>
+            <div class="storm-legend-row"><div class="storm-legend-dot" id="storm-legend-dot-3" style="background:#cc00ff;box-shadow:0 0 8px #cc00ff"></div><span id="storm-legend-text-3">80–100% Ekstremalne ⚡⚡</span></div>
+            <div class="storm-legend-row" style="margin-top:6px;border-top:1px solid rgba(255,255,255,.06);padding-top:5px"><div style="font-size:1.1rem" id="storm-legend-extra-icon">⚡</div><span style="font-size:.58rem;color:var(--text2)" id="storm-legend-extra-text">Aktywne wyładowania (LPI)</span></div>
           </div>
 
           <div style="margin-top:12px;font-size:.58rem;color:var(--text2);line-height:1.6;border-top:1px solid var(--border);padding-top:8px">
@@ -2493,12 +2534,10 @@ document.addEventListener("keydown",function(e){if(e.key==="Escape")closeFcModal
 
 // Siatka 40 punktów Polski
 var STORM_GRID=[
-  [37.0,0.0],[37.0,1.0],[37.0,2.0],[37.0,3.0],[37.0,4.0],[37.0,5.0],[37.0,7.0],[37.0,8.0],[37.0,9.0],[37.0,10.0],[37.0,11.0],[37.0,12.0],[37.0,13.0],[37.0,14.0],[37.0,15.0],[37.0,16.0],[37.0,17.0],[37.0,18.0],[37.0,19.0],[37.0,20.0],[37.0,21.0],[37.0,22.0],[37.0,23.0],[37.0,24.0],[37.0,25.0],[37.0,26.0],[38.0,0.0],[38.0,1.0],[38.0,2.0],[38.0,3.0],[38.0,4.0],[38.0,5.0],[38.0,7.0],[38.0,8.0],[38.0,9.0],[38.0,10.0],[38.0,11.0],[38.0,12.0],[38.0,13.0],[38.0,14.0],[38.0,15.0],[38.0,16.0],[38.0,17.0],[38.0,18.0],[38.0,19.0],[38.0,20.0],[38.0,21.0],[38.0,22.0],[38.0,23.0],[38.0,24.0],[38.0,25.0],[38.0,26.0],[39.0,0.0],[39.0,1.0],[39.0,2.0],[39.0,3.0],[39.0,4.0],[39.0,5.0],[39.0,7.0],[39.0,8.0],[39.0,9.0],[39.0,10.0],[39.0,11.0],[39.0,12.0],[39.0,13.0],[39.0,14.0],[39.0,15.0],[39.0,16.0],[39.0,17.0],[39.0,18.0],[39.0,19.0],[39.0,20.0],[39.0,21.0],[39.0,22.0],[39.0,23.0],[39.0,24.0],[39.0,25.0],[39.0,26.0],[40.0,0.0],[40.0,1.0],[40.0,2.0],[40.0,3.0],[40.0,4.0],[40.0,5.0],[40.0,7.0],[40.0,8.0],[40.0,9.0],[40.0,10.0],[40.0,11.0],[40.0,12.0],[40.0,13.0],[40.0,14.0],[40.0,15.0],[40.0,16.0],[40.0,17.0],[40.0,18.0],[40.0,19.0],[40.0,20.0],[40.0,21.0],[40.0,22.0],[40.0,23.0],[40.0,24.0],[40.0,25.0],[40.0,26.0],[41.0,0.0],[41.0,1.0],[41.0,2.0],[41.0,3.0],[41.0,4.0],[41.0,5.0],[41.0,7.0],[41.0,8.0],[41.0,9.0],[41.0,10.0],[41.0,11.0],[41.0,12.0],[41.0,13.0],[41.0,14.0],[41.0,15.0],[41.0,16.0],[41.0,17.0],[41.0,18.0],[41.0,19.0],[41.0,20.0],[41.0,21.0],[41.0,22.0],[41.0,23.0],[41.0,24.0],[41.0,25.0],[41.0,26.0],[42.0,0.0],[42.0,1.0],[42.0,2.0],[42.0,3.0],[42.0,4.0],[42.0,5.0],[42.0,7.0],[42.0,8.0],[42.0,9.0],[42.0,10.0],[42.0,11.0],[42.0,12.0],[42.0,13.0],[42.0,14.0],[42.0,15.0],[42.0,16.0],[42.0,17.0],[42.0,18.0],[42.0,19.0],[42.0,20.0],[42.0,21.0],[42.0,22.0],[42.0,23.0],[42.0,24.0],[42.0,25.0],[43.0,0.0],[43.0,1.0],[43.0,2.0],[43.0,3.0],[43.0,4.0],[43.0,5.0],[43.0,6.0],[43.0,7.0],[43.0,8.0],[43.0,9.0],[43.0,10.0],[43.0,11.0],[43.0,12.0],[43.0,13.0],[43.0,14.0],[43.0,15.0],[43.0,16.0],[43.0,17.0],[43.0,18.0],[43.0,19.0],[44.0,0.0],[44.0,1.0],[44.0,2.0],[44.0,3.0],[44.0,4.0],[44.0,5.0],[44.0,6.0],[44.0,7.0],[44.0,8.0],[44.0,9.0],[44.0,10.0],[44.0,11.0],[44.0,12.0],[44.0,13.0],[44.0,14.0],[44.0,15.0],[44.0,16.0],[44.0,17.0],[44.0,18.0],[44.0,19.0],[45.0,0.0],[45.0,1.0],[45.0,2.0],[45.0,3.0],[45.0,4.0],[45.0,5.0],[45.0,6.0],[45.0,7.0],[45.0,8.0],[45.0,9.0],[45.0,10.0],[45.0,11.0],[45.0,12.0],[45.0,13.0],[45.0,14.0],[45.0,15.0],[45.0,16.0],[45.0,17.0],[45.0,18.0],[45.0,19.0],[46.0,0.0],[46.0,1.0],[46.0,2.0],[46.0,3.0],[46.0,4.0],[46.0,5.0],[46.0,6.0],[46.0,7.0],[46.0,8.0],[46.0,9.0],[46.0,10.0],[46.0,11.0],[46.0,12.0],[46.0,13.0],[46.0,14.0],[46.0,15.0],[46.0,16.0],[46.0,17.0],[46.0,18.0],[46.0,19.0],[47.0,9.0],[47.0,10.0],[47.0,11.0],[47.0,12.0],[47.0,13.0],[47.0,14.0],[47.0,15.0],[47.0,16.0],[47.0,17.0],[47.65,6.0],[47.65,7.0],[47.65,8.0],[47.65,9.0],[47.65,10.0],[47.65,11.0],[47.65,12.0],[47.65,13.0],[47.65,14.0],[47.65,15.0],[48.0,9.0],[48.0,10.0],[48.0,11.0],[48.0,12.0],[48.0,13.0],[48.0,14.0],[48.0,15.0],[48.0,16.0],[48.0,17.0],[48.3,6.0],[48.3,7.0],[48.3,8.0],[48.3,9.0],[48.3,10.0],[48.3,11.0],[48.3,12.0],[48.3,13.0],[48.3,14.0],[48.3,15.0],[48.95,6.0],[48.95,7.0],[48.95,8.0],[48.95,9.0],[48.95,10.0],[48.95,11.0],[48.95,12.0],[48.95,13.0],[48.95,14.0],[48.95,15.0],[49.6,6.0],[49.6,7.0],[49.6,8.0],[49.6,9.0],[49.6,10.0],[49.6,11.0],[49.6,12.0],[49.6,13.0],[49.6,14.0],[49.6,15.0],[49.6,16.0],[49.6,17.0],[49.6,18.0],[49.6,19.0],[49.6,20.0],[49.6,21.0],[49.6,22.0],[49.6,23.0],[49.6,24.0],[50.25,6.0],[50.25,7.0],[50.25,8.0],[50.25,9.0],[50.25,10.0],[50.25,11.0],[50.25,12.0],[50.25,13.0],[50.25,14.0],[50.25,15.0],[50.25,16.0],[50.25,17.0],[50.25,18.0],[50.25,19.0],[50.25,20.0],[50.25,21.0],[50.25,22.0],[50.25,23.0],[50.25,24.0],[50.9,6.0],[50.9,7.0],[50.9,8.0],[50.9,9.0],[50.9,10.0],[50.9,11.0],[50.9,12.0],[50.9,13.0],[50.9,14.0],[50.9,15.0],[50.9,16.0],[50.9,17.0],[50.9,18.0],[50.9,19.0],[50.9,20.0],[50.9,21.0],[50.9,22.0],[50.9,23.0],[50.9,24.0],[51.55,6.0],[51.55,7.0],[51.55,8.0],[51.55,9.0],[51.55,10.0],[51.55,11.0],[51.55,12.0],[51.55,13.0],[51.55,14.0],[51.55,15.0],[51.55,16.0],[51.55,17.0],[51.55,18.0],[51.55,19.0],[51.55,20.0],[51.55,21.0],[51.55,22.0],[51.55,23.0],[51.55,24.0],[52.2,6.0],[52.2,7.0],[52.2,8.0],[52.2,9.0],[52.2,10.0],[52.2,11.0],[52.2,12.0],[52.2,13.0],[52.2,14.0],[52.2,15.0],[52.2,16.0],[52.2,17.0],[52.2,18.0],[52.2,19.0],[52.2,20.0],[52.2,21.0],[52.2,22.0],[52.2,23.0],[52.2,24.0],[52.85,6.0],[52.85,7.0],[52.85,8.0],[52.85,9.0],[52.85,10.0],[52.85,11.0],[52.85,12.0],[52.85,13.0],[52.85,14.0],[52.85,15.0],[52.85,16.0],[52.85,17.0],[52.85,18.0],[52.85,19.0],[52.85,20.0],[52.85,21.0],[52.85,22.0],[52.85,23.0],[52.85,24.0],[53.5,6.0],[53.5,7.0],[53.5,8.0],[53.5,9.0],[53.5,10.0],[53.5,11.0],[53.5,12.0],[53.5,13.0],[53.5,14.0],[53.5,15.0],[53.5,16.0],[53.5,17.0],[53.5,18.0],[53.5,19.0],[53.5,20.0],[53.5,21.0],[53.5,22.0],[53.5,23.0],[53.5,24.0],[54.15,6.0],[54.15,7.0],[54.15,8.0],[54.15,9.0],[54.15,10.0],[54.15,11.0],[54.15,12.0],[54.15,13.0],[54.15,14.0],[54.15,16.0],[54.15,17.0],[54.15,18.0],[54.15,19.0],[54.15,20.0],[54.15,21.0],[54.15,22.0],[54.8,9.0],[54.8,10.0],[54.8,11.0],[54.8,12.0],[54.8,13.0],[54.8,14.0],[54.8,17.0],[54.8,18.0],[54.8,19.0],[54.8,20.0],[54.8,21.0],[54.8,22.0]
-,
-  [54.15,24.0],[54.8,15.0],[54.8,16.0],[54.8,23.0],[54.15,23.0],[54.8,24.0],[54.15,15.0]
+[49.0,14.1],[49.0,14.6],[49.0,15.1],[49.0,15.6],[49.0,16.1],[49.0,16.6],[49.0,17.1],[49.0,17.6],[49.0,18.1],[49.0,18.6],[49.0,19.1],[49.0,19.6],[49.0,20.1],[49.0,20.6],[49.0,21.1],[49.0,21.6],[49.0,22.1],[49.0,22.6],[49.0,23.1],[49.0,23.6],[49.0,24.1],[49.5,14.1],[49.5,14.6],[49.5,15.1],[49.5,15.6],[49.5,16.1],[49.5,16.6],[49.5,17.1],[49.5,17.6],[49.5,18.1],[49.5,18.6],[49.5,19.1],[49.5,19.6],[49.5,20.1],[49.5,20.6],[49.5,21.1],[49.5,21.6],[49.5,22.1],[49.5,22.6],[49.5,23.1],[49.5,23.6],[49.5,24.1],[50.0,14.1],[50.0,14.6],[50.0,15.1],[50.0,15.6],[50.0,16.1],[50.0,16.6],[50.0,17.1],[50.0,17.6],[50.0,18.1],[50.0,18.6],[50.0,19.1],[50.0,19.6],[50.0,20.1],[50.0,20.6],[50.0,21.1],[50.0,21.6],[50.0,22.1],[50.0,22.6],[50.0,23.1],[50.0,23.6],[50.0,24.1],[50.5,14.1],[50.5,14.6],[50.5,15.1],[50.5,15.6],[50.5,16.1],[50.5,16.6],[50.5,17.1],[50.5,17.6],[50.5,18.1],[50.5,18.6],[50.5,19.1],[50.5,19.6],[50.5,20.1],[50.5,20.6],[50.5,21.1],[50.5,21.6],[50.5,22.1],[50.5,22.6],[50.5,23.1],[50.5,23.6],[50.5,24.1],[51.0,14.1],[51.0,14.6],[51.0,15.1],[51.0,15.6],[51.0,16.1],[51.0,16.6],[51.0,17.1],[51.0,17.6],[51.0,18.1],[51.0,18.6],[51.0,19.1],[51.0,19.6],[51.0,20.1],[51.0,20.6],[51.0,21.1],[51.0,21.6],[51.0,22.1],[51.0,22.6],[51.0,23.1],[51.0,23.6],[51.0,24.1],[51.5,14.1],[51.5,14.6],[51.5,15.1],[51.5,15.6],[51.5,16.1],[51.5,16.6],[51.5,17.1],[51.5,17.6],[51.5,18.1],[51.5,18.6],[51.5,19.1],[51.5,19.6],[51.5,20.1],[51.5,20.6],[51.5,21.1],[51.5,21.6],[51.5,22.1],[51.5,22.6],[51.5,23.1],[51.5,23.6],[51.5,24.1],[52.0,14.1],[52.0,14.6],[52.0,15.1],[52.0,15.6],[52.0,16.1],[52.0,16.6],[52.0,17.1],[52.0,17.6],[52.0,18.1],[52.0,18.6],[52.0,19.1],[52.0,19.6],[52.0,20.1],[52.0,20.6],[52.0,21.1],[52.0,21.6],[52.0,22.1],[52.0,22.6],[52.0,23.1],[52.0,23.6],[52.0,24.1],[52.5,14.1],[52.5,14.6],[52.5,15.1],[52.5,15.6],[52.5,16.1],[52.5,16.6],[52.5,17.1],[52.5,17.6],[52.5,18.1],[52.5,18.6],[52.5,19.1],[52.5,19.6],[52.5,20.1],[52.5,20.6],[52.5,21.1],[52.5,21.6],[52.5,22.1],[52.5,22.6],[52.5,23.1],[52.5,23.6],[52.5,24.1],[53.0,14.1],[53.0,14.6],[53.0,15.1],[53.0,15.6],[53.0,16.1],[53.0,16.6],[53.0,17.1],[53.0,17.6],[53.0,18.1],[53.0,18.6],[53.0,19.1],[53.0,19.6],[53.0,20.1],[53.0,20.6],[53.0,21.1],[53.0,21.6],[53.0,22.1],[53.0,22.6],[53.0,23.1],[53.0,23.6],[53.0,24.1],[53.5,14.1],[53.5,14.6],[53.5,15.1],[53.5,15.6],[53.5,16.1],[53.5,16.6],[53.5,17.1],[53.5,17.6],[53.5,18.1],[53.5,18.6],[53.5,19.1],[53.5,19.6],[53.5,20.1],[53.5,20.6],[53.5,21.1],[53.5,21.6],[53.5,22.1],[53.5,22.6],[53.5,23.1],[53.5,23.6],[53.5,24.1],[54.0,14.1],[54.0,14.6],[54.0,15.1],[54.0,15.6],[54.0,16.1],[54.0,16.6],[54.0,17.1],[54.0,17.6],[54.0,18.1],[54.0,18.6],[54.0,19.1],[54.0,19.6],[54.0,20.1],[54.0,20.6],[54.0,21.1],[54.0,21.6],[54.0,22.1],[54.0,22.6],[54.0,23.1],[54.0,23.6],[54.0,24.1],[54.5,14.1],[54.5,14.6],[54.5,15.1],[54.5,15.6],[54.5,16.1],[54.5,16.6],[54.5,17.1],[54.5,17.6],[54.5,18.1],[54.5,18.6],[54.5,19.1],[54.5,19.6],[54.5,20.1],[54.5,20.6],[54.5,21.1],[54.5,21.6],[54.5,22.1],[54.5,22.6],[54.5,23.1],[54.5,23.6],[54.5,24.1]
 ];
-var STORM_CELL_LAT=0.65; // wysokość komórki w stopniach
-var STORM_CELL_LON=1.00; // szerokość komórki
+var STORM_CELL_LAT=0.50; // wysokość komórki w stopniach
+var STORM_CELL_LON=0.50; // szerokość komórki
 var burzeData=[];        // [pointIdx][hourIdx] = {prob,cape,li,cin,prc,shr,wmo}
 var burzeHourIdx=0;      // aktualny indeks godziny suwaka (0=teraz)
 var burzeHours=[];       // tablica timestampów ISO dla 72h
@@ -2510,6 +2549,7 @@ var burzeInit=false;
 var burzeLoaded=false;
 var burzeChartInst=null;
 var burzeRefreshInt=null;
+var burzeLayerMode='storm';
 
 // ── ALGORYTM PRAWDOPODOBIEŃSTWA BURZY ───────────────────────────────
 // ── ALGORYTM BURZOWY v2 — 9 parametrów ─────────────────────────────────
@@ -2641,6 +2681,194 @@ function probToColor(p){
   return     {fill:'#1fde8a',stroke:'#00cc66',glow:'rgba(31,220,138,0.2)'};
 }
 
+function rainToColor(mm){
+  if(mm>=10) return {fill:'#ff5a1f',stroke:'#ff8c42'};
+  if(mm>=5)  return {fill:'#ffd43b',stroke:'#ffe680'};
+  if(mm>=2)  return {fill:'#9be7ff',stroke:'#d7f5ff'};
+  if(mm>=0.2)return {fill:'#3b82f6',stroke:'#7fb4ff'};
+  return     {fill:'#000000',stroke:'#000000'};
+}
+
+function describeRainIntensity(mm){
+  if(mm>=10) return 'Bardzo mocny opad';
+  if(mm>=5)  return 'Mocny opad';
+  if(mm>=2)  return 'Umiarkowany opad';
+  if(mm>=0.2)return 'Lekki opad';
+  return 'Brak opadu';
+}
+
+function isRainLayerMode(mode){
+  return mode==='rain' || mode==='rainanim';
+}
+
+function getRainCloudSignal(rainGrid, gx, gy){
+  var total=0, weight=0;
+  for(var oy=-1; oy<=1; oy++){
+    for(var ox=-1; ox<=1; ox++){
+      var nx=gx+ox, ny=gy+oy;
+      if(nx<0||ny<0||nx>=GRID_W||ny>=GRID_H) continue;
+      var w=(ox===0&&oy===0)?1.4:1.0;
+      total += (rainGrid[ny*GRID_W+nx]||0) * w;
+      weight += w;
+    }
+  }
+  return weight ? total/weight : 0;
+}
+
+function interpPoint(p1,p2,v1,v2,th){
+  var t = (v2!==v1) ? ((th-v1)/(v2-v1)) : 0.5;
+  if(t<0)t=0;
+  if(t>1)t=1;
+  return {x:p1.x+(p2.x-p1.x)*t,y:p1.y+(p2.y-p1.y)*t};
+}
+
+function buildThresholdPolygon(vTL,vTR,vBR,vBL,pTL,pTR,pBR,pBL,th){
+  var top = interpPoint(pTL,pTR,vTL,vTR,th);
+  var right = interpPoint(pTR,pBR,vTR,vBR,th);
+  var bottom = interpPoint(pBL,pBR,vBL,vBR,th);
+  var left = interpPoint(pTL,pBL,vTL,vBL,th);
+  var code = (vTL>=th?8:0) | (vTR>=th?4:0) | (vBR>=th?2:0) | (vBL>=th?1:0);
+  var avg = (vTL+vTR+vBR+vBL)/4;
+  switch(code){
+    case 0: return null;
+    case 1: return [left,bottom,pBL];
+    case 2: return [bottom,right,pBR];
+    case 3: return [left,right,pBR,pBL];
+    case 4: return [top,pTR,right];
+    case 5: return avg>=th ? [top,pTR,right,bottom,pBL,left] : [top,left,pBL,bottom,right,pTR];
+    case 6: return [top,pTR,pBR,bottom];
+    case 7: return [top,pTR,pBR,pBL,left];
+    case 8: return [pTL,top,left];
+    case 9: return [pTL,top,bottom,pBL];
+    case 10:return avg>=th ? [pTL,top,right,pBR,bottom,left] : [pTL,left,bottom,pBR,right,top];
+    case 11:return [pTL,top,right,pBR,pBL];
+    case 12:return [pTL,pTR,right,left];
+    case 13:return [pTL,pTR,right,bottom,pBL];
+    case 14:return [pTL,pTR,pBR,bottom,left];
+    case 15:return [pTL,pTR,pBR,pBL];
+  }
+  return null;
+}
+
+function drawThresholdField(ctx, screenPts, valueFn, th, fillStyle, alpha){
+  ctx.beginPath();
+  for(var gy=0; gy<GRID_H-1; gy++){
+    for(var gx=0; gx<GRID_W-1; gx++){
+      var vTL=valueFn(gx,gy);
+      var vTR=valueFn(gx+1,gy);
+      var vBR=valueFn(gx+1,gy+1);
+      var vBL=valueFn(gx,gy+1);
+      var poly=buildThresholdPolygon(
+        vTL,vTR,vBR,vBL,
+        screenPts[gy][gx],screenPts[gy][gx+1],screenPts[gy+1][gx+1],screenPts[gy+1][gx],
+        th
+      );
+      if(!poly||poly.length<3) continue;
+      ctx.moveTo(poly[0].x,poly[0].y);
+      for(var i=1;i<poly.length;i++) ctx.lineTo(poly[i].x,poly[i].y);
+      ctx.closePath();
+    }
+  }
+  ctx.fillStyle = fillStyle.replace('__A__', alpha.toFixed(2));
+  ctx.fill();
+}
+
+function drawRainAnimFrame(ctx, map, rainGrid){
+  ctx.save();
+  ctx.globalCompositeOperation='source-over';
+  ctx.lineJoin='round';
+  var screenPts=[];
+  for(var gy=0; gy<GRID_H; gy++){
+    screenPts[gy]=[];
+    for(var gx=0; gx<GRID_W; gx++){
+      var lat=GEO_MAX_LAT - (GEO_MAX_LAT-GEO_MIN_LAT)*gy/(GRID_H-1);
+      var lon=GEO_MIN_LON + (GEO_MAX_LON-GEO_MIN_LON)*gx/(GRID_W-1);
+      screenPts[gy][gx]=map.latLngToLayerPoint([lat,lon]);
+    }
+  }
+  drawThresholdField(ctx, screenPts, function(gx,gy){ return getRainCloudSignal(rainGrid,gx,gy); }, 0.10, 'rgba(245,248,252,__A__)', 0.18);
+  drawThresholdField(ctx, screenPts, function(gx,gy){ return getRainCloudSignal(rainGrid,gx,gy); }, 0.28, 'rgba(245,248,252,__A__)', 0.12);
+  drawThresholdField(ctx, screenPts, function(gx,gy){ return rainGrid[gy*GRID_W+gx]||0; }, 0.20, 'rgba(59,130,246,__A__)', 0.44);
+  drawThresholdField(ctx, screenPts, function(gx,gy){ return rainGrid[gy*GRID_W+gx]||0; }, 2.00, 'rgba(155,231,255,__A__)', 0.58);
+  drawThresholdField(ctx, screenPts, function(gx,gy){ return rainGrid[gy*GRID_W+gx]||0; }, 5.00, 'rgba(255,212,59,__A__)', 0.70);
+  drawThresholdField(ctx, screenPts, function(gx,gy){ return rainGrid[gy*GRID_W+gx]||0; }, 10.00, 'rgba(255,90,31,__A__)', 0.82);
+  ctx.restore();
+}
+
+function setBurzeLayerMode(mode){
+  burzeLayerMode=(mode==='rain'||mode==='rainanim')?mode:'storm';
+  var btnStorm=document.getElementById('burze-mode-storm');
+  var btnRain=document.getElementById('burze-mode-rain');
+  var btnRainAnim=document.getElementById('burze-mode-rainanim');
+  if(btnStorm){
+    btnStorm.style.borderColor=burzeLayerMode==='storm'?'rgba(232,130,26,.45)':'var(--border)';
+    btnStorm.style.background=burzeLayerMode==='storm'?'rgba(232,130,26,.16)':'rgba(255,255,255,.03)';
+    btnStorm.style.color=burzeLayerMode==='storm'?'var(--accent)':'var(--text2)';
+  }
+  if(btnRain){
+    btnRain.style.borderColor=burzeLayerMode==='rain'?'rgba(41,212,255,.45)':'var(--border)';
+    btnRain.style.background=burzeLayerMode==='rain'?'rgba(41,212,255,.14)':'rgba(255,255,255,.03)';
+    btnRain.style.color=burzeLayerMode==='rain'?'var(--blue2)':'var(--text2)';
+  }
+  if(btnRainAnim){
+    btnRainAnim.style.borderColor=burzeLayerMode==='rainanim'?'rgba(155,231,255,.45)':'var(--border)';
+    btnRainAnim.style.background=burzeLayerMode==='rainanim'?'rgba(215,245,255,.14)':'rgba(255,255,255,.03)';
+    btnRainAnim.style.color=burzeLayerMode==='rainanim'?'#d7f5ff':'var(--text2)';
+  }
+  updateBurzeLegend();
+  updateBurzePanelForStep(curStep);
+  buildStormChart();
+  updateChartHighlight(Math.floor(curStep/STEPS_PER_HOUR));
+  redrawBurze();
+}
+
+function updateBurzeLegend(){
+  var title=document.getElementById('storm-legend-title');
+  var gauge=document.getElementById('storm-gauge-label');
+  var t1=document.getElementById('storm-legend-text-1');
+  var t2=document.getElementById('storm-legend-text-2');
+  var t3=document.getElementById('storm-legend-text-3');
+  var d1=document.getElementById('storm-legend-dot-1');
+  var d2=document.getElementById('storm-legend-dot-2');
+  var d3=document.getElementById('storm-legend-dot-3');
+  var extraIcon=document.getElementById('storm-legend-extra-icon');
+  var extraText=document.getElementById('storm-legend-extra-text');
+  if(burzeLayerMode==='rainanim'){
+    if(title)title.textContent='Legenda test anim.';
+    if(gauge)gauge.textContent='Pasmo opadów';
+    if(t1)t1.textContent='0.2–2 mm/h Tło pasma';
+    if(t2)t2.textContent='2–5 mm/h Rdzeń strefy';
+    if(t3)t3.textContent='5–10+ mm/h Silniejszy rdzeń';
+    if(d1){d1.style.background='#cfd6de';d1.style.boxShadow='0 0 6px rgba(230,236,242,.65)';}
+    if(d2){d2.style.background='#9be7ff';d2.style.boxShadow='0 0 6px #9be7ff';}
+    if(d3){d3.style.background='#3b82f6';d3.style.boxShadow='0 0 8px #3b82f6';}
+    if(extraIcon)extraIcon.textContent='☁';
+    if(extraText)extraText.textContent='Analiza modeli + nakładające się pasma opadu';
+  } else if(burzeLayerMode==='rain'){
+    if(title)title.textContent='Legenda opadu';
+    if(gauge)gauge.textContent='Intensywność opadu';
+    if(t1)t1.textContent='0.2–2 mm/h Lekki';
+    if(t2)t2.textContent='2–5 mm/h Umiarkowany';
+    if(t3)t3.textContent='5–10+ mm/h Mocny / ulewa';
+    if(d1){d1.style.background='#3b82f6';d1.style.boxShadow='0 0 6px #3b82f6';}
+    if(d2){d2.style.background='#9be7ff';d2.style.boxShadow='0 0 6px #9be7ff';}
+    if(d3){d3.style.background='#ff5a1f';d3.style.boxShadow='0 0 8px #ff5a1f';}
+    if(extraIcon)extraIcon.textContent='☔';
+    if(extraText)extraText.textContent='Punkty z opadem modelowym';
+  } else {
+    if(title)title.textContent='Legenda mapy';
+    if(gauge)gauge.textContent='Ryzyko burzowe';
+    if(t1)t1.textContent='40–60% Umiarkowane';
+    if(t2)t2.textContent='60–80% Wysokie ⚡';
+    if(t3)t3.textContent='80–100% Ekstremalne ⚡⚡';
+    if(d1){d1.style.background='#ff8800';d1.style.boxShadow='0 0 6px #ff8800';}
+    if(d2){d2.style.background='#ff3a3a';d2.style.boxShadow='0 0 6px #ff3a3a';}
+    if(d3){d3.style.background='#cc00ff';d3.style.boxShadow='0 0 8px #cc00ff';}
+    if(extraIcon)extraIcon.textContent='⚡';
+    if(extraText)extraText.textContent='Aktywne wyładowania (LPI)';
+  }
+}
+
 // ── INICJALIZACJA MAPY BURZE ─────────────────────────────────────────
 function initMapBurze(){
   if(mapBurze)return;
@@ -2649,6 +2877,15 @@ function initMapBurze(){
   mapBurze=L.map('map-burze',{
     zoomControl:true,attributionControl:false,doubleClickZoom:false
   }).setView([ctr.lat||ctr[0],ctr.lng||ctr[1]],zm);
+  if(!mapBurze.getPane('stormMarkers')){
+    mapBurze.createPane('stormMarkers');
+    mapBurze.getPane('stormMarkers').style.zIndex='650';
+  }
+  if(!mapBurze.getPane('stormCanvasPane')){
+    mapBurze.createPane('stormCanvasPane');
+    mapBurze.getPane('stormCanvasPane').style.zIndex='620';
+    mapBurze.getPane('stormCanvasPane').style.pointerEvents='none';
+  }
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
     {maxZoom:10,subdomains:'abcd'}).addTo(mapBurze);
   setTimeout(function(){
@@ -2656,170 +2893,148 @@ function initMapBurze(){
     initCanvasOverlay();
   },300);
 }
-// ── POBIERANIE DANYCH ────────────────────────────────────────────────
+// ── POBIERANIE DANYCH — multi-location batch (3 requesty zamiast 252) ──
+function parseOneBatchItem(d){
+  // d = jeden element z tablicy odpowiedzi Open-Meteo (lub cała odpowiedź dla 1 lok.)
+  var h=d.hourly||{};
+  var times=h.time||[];
+  var cape=h.cape||[];
+  var li=h.lifted_index||[];
+  var cin=h.convective_inhibition||[];
+  var prc=h.precipitation||[];
+  var wmo=h.weather_code||[];
+  var wsp=h.wind_speed_10m||[];
+  var wsp850=h.wind_speed_850hPa||[];
+  var rh700=h.relative_humidity_700hPa||[];
+  var blh=h.boundary_layer_height||[];
+  var dp2m=h.dew_point_2m||[];
+  var t80m=h.temperature_80m||[];
+  var t2m=h.temperature_2m||[];
+  var pp=h.precipitation_probability||[];
+  // LPI — minutely_15 nie jest dostępne w multi-loc, pomijamy (=0)
+  var pointData=[];
+  for(var i=0;i<Math.min(72,times.length);i++){
+    var shr=Math.abs((wsp850[i]||0)-(wsp[i]||0));
+    var blhVal=blh[i]||0;
+    var updraft=blhVal>3000?5:blhVal>2000?3:blhVal>1200?1.5:blhVal>600?0.5:0;
+    var lapseRate=(t2m[i]||0)-(t80m[i]||0);
+    var dpVal=dp2m[i]||0;
+    var ppVal=pp[i]||0;
+    var prob=calcStormProb(
+      cape[i]||0, li[i]||0, cin[i]||0,
+      prc[i]||0, wmo[i]||0, shr,
+      0, rh700[i]||50, updraft,
+      dpVal, lapseRate, ppVal
+    );
+    pointData.push({
+      prob:prob,
+      cape:Math.round(cape[i]||0),
+      li:+(li[i]||0).toFixed(1),
+      cin:Math.round(cin[i]||0),
+      prc:+(prc[i]||0).toFixed(1),
+      shr:Math.round(shr),
+      wmo:wmo[i]||0,
+      lpi:0,
+      rh700:Math.round(rh700[i]||0),
+      blh:Math.round(blhVal),
+      dp:Math.round(dpVal),
+      lr:+(lapseRate).toFixed(1),
+      pp:Math.round(ppVal),
+      time:times[i]
+    });
+  }
+  return {data:pointData, times:times};
+}
+
+function onAllBatchesDone(){
+  document.getElementById('burze-loading').style.display='none';
+  burzeLoaded=true;
+  document.getElementById('burze-update-time').textContent=
+    new Date().toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'})+' (akt.)';
+  var nowUtc=new Date();
+  var nowStr=nowUtc.getFullYear()+'-'
+    +String(nowUtc.getMonth()+1).padStart(2,'0')+'-'
+    +String(nowUtc.getDate()).padStart(2,'0')+'T'
+    +String(nowUtc.getHours()).padStart(2,'0')+':00';
+  var nowIdx=0;
+  if(burzeHours&&burzeHours.length){
+    for(var bi=0;bi<burzeHours.length;bi++){
+      if(burzeHours[bi]<=nowStr) nowIdx=bi; else break;
+    }
+  }
+  burzeHourIdx=nowIdx; curStep=nowIdx*STEPS_PER_HOUR;
+  var slEl=document.getElementById('burze-slider');
+  if(slEl) slEl.value=nowIdx;
+  redrawBurze();
+  buildStormChart();
+  prebuildAllGrids(function(){
+    redrawBurze();
+    setTimeout(generateAIAlert, 500);
+  });
+}
+
 function loadBurzeData(force){
   if(!burzeInit)return;
   if(burzeLoaded&&!force)return;
   document.getElementById('burze-loading').style.display='block';
   burzeData=[];
   burzeHours=[];
+  rainGridCache={};
+  gridCache={};
   burzeMarkers.forEach(function(m){if(mapBurze)mapBurze.removeLayer(m);});
   burzeMarkers=[];
-  var loaded=0;
-  var total=STORM_GRID.length;
 
-  STORM_GRID.forEach(function(pt,ptIdx){
-    var lat=pt[0],lon=pt[1];
-    // Pobierz CAPE, LI, CIN, opady, WMO, wiatr na 72h (co 1h)
-    // Zapytanie główne: parametry konwekcyjne + ciśnieniowe
-    // Używamy best_match który dla PL+DE wybiera DWD ICON (najdokładniejszy dla Europy)
-    // Dodane: dew_point_2m (kluczowy!), temperature_80m (lapse rate), precipitation_probability
+  var BATCH=100; // max lokalizacji na request
+  var batches=[];
+  for(var i=0;i<STORM_GRID.length;i+=BATCH){
+    batches.push(STORM_GRID.slice(i,i+BATCH));
+  }
+  var batchesDone=0;
+  var total=STORM_GRID.length;
+  var loaded=0;
+  var progEl=document.getElementById('burze-progress');
+
+  batches.forEach(function(batch, bIdx){
+    var startIdx=bIdx*BATCH;
+    var lats=batch.map(function(p){return p[0];}).join(',');
+    var lons=batch.map(function(p){return p[1];}).join(',');
     var url='https://api.open-meteo.com/v1/forecast'
-      +'?latitude='+lat+'&longitude='+lon
+      +'?latitude='+lats+'&longitude='+lons
       +'&hourly=cape,lifted_index,convective_inhibition,precipitation,'
       +'precipitation_probability,weather_code,wind_speed_10m,wind_speed_850hPa,'
       +'relative_humidity_700hPa,boundary_layer_height,'
       +'dew_point_2m,temperature_80m,temperature_2m'
-      +'&minutely_15=lightning_potential'
       +'&wind_speed_unit=kmh&timezone=Europe/Warsaw&forecast_days=3'
       +'&models=icon_seamless';
 
-    var _delay=Math.floor(ptIdx/10)*500;
-    setTimeout(function(){
     fetch(url)
     .then(function(r){return r.json();})
-    .then(function(d){
-      var h=d.hourly||{};
-      var m15=d.minutely_15||{};
-      var times=h.time||[];
-      var cape=h.cape||[];
-      var li=h.lifted_index||[];
-      var cin=h.convective_inhibition||[];
-      var prc=h.precipitation||[];
-      var wmo=h.weather_code||[];
-      var wsp=h.wind_speed_10m||[];
-      var wsp850=h.wind_speed_850hPa||[];
-      var rh700=h.relative_humidity_700hPa||[];
-      var blh=h.boundary_layer_height||[];
-      var dp2m=h.dew_point_2m||[];          // punkt rosy 2m — kluczowy!
-      var t80m=h.temperature_80m||[];       // temp na 80m
-      var t2m=h.temperature_2m||[];         // temp 2m
-      var pp=h.precipitation_probability||[]; // szansa opadów
-      // LPI z 15min — agreguj na godziny (max z 4 wartości)
-      var lpiTimes=m15.time||[];
-      var lpiRaw=m15.lightning_potential||[];
-      var lpiHourly=[];
-      for(var hi=0;hi<72;hi++){
-        var tStr=times[hi];if(!tStr){lpiHourly.push(0);continue;}
-        var maxLpi=0;
-        for(var mi=0;mi<lpiTimes.length;mi++){
-          if(lpiTimes[mi]&&lpiTimes[mi].substring(0,13)===tStr.substring(0,13)){
-            if((lpiRaw[mi]||0)>maxLpi)maxLpi=lpiRaw[mi]||0;
-          }
+    .then(function(resp){
+      // Open-Meteo zwraca array gdy wiele lokalizacji, obiekt gdy jedna
+      var items=Array.isArray(resp)?resp:[resp];
+      items.forEach(function(d,localIdx){
+        var ptIdx=startIdx+localIdx;
+        var parsed=parseOneBatchItem(d);
+        burzeData[ptIdx]=parsed.data;
+        if(ptIdx===0&&parsed.times.length>0){
+          burzeHours=parsed.times.slice(0,72);
         }
-        lpiHourly.push(maxLpi);
-      }
-
-      var pointData=[];
-      for(var i=0;i<Math.min(72,times.length);i++){
-        var shr=Math.abs((wsp850[i]||0)-(wsp[i]||0));
-        // BLH proxy updraft: wysoka warstwa graniczna w dzień = silna konwekcja
-        var blhVal=blh[i]||0;
-        var updraft=blhVal>3000?5:blhVal>2000?3:blhVal>1200?1.5:blhVal>600?0.5:0;
-        // Lapse rate: różnica temp między 2m a 80m (większa = bardziej niestabilne)
-        var lapseRate=(t2m[i]||0)-(t80m[i]||0); // dodatni = normalny, ujemny = inwersja
-        // Dew point: >15°C = bardzo niestabilne, >18°C = ekstremalne
-        var dpVal=dp2m[i]||0;
-        // Precipitation probability
-        var ppVal=pp[i]||0;
-        var prob=calcStormProb(
-          cape[i]||0, li[i]||0, cin[i]||0,
-          prc[i]||0, wmo[i]||0, shr,
-          lpiHourly[i]||0, rh700[i]||50, updraft,
-          dpVal, lapseRate, ppVal
-        );
-        pointData.push({
-          prob:prob,
-          cape:Math.round(cape[i]||0),
-          li:+(li[i]||0).toFixed(1),
-          cin:Math.round(cin[i]||0),
-          prc:+(prc[i]||0).toFixed(1),
-          shr:Math.round(shr),
-          wmo:wmo[i]||0,
-          lpi:+(lpiHourly[i]||0).toFixed(2),
-          rh700:Math.round(rh700[i]||0),
-          blh:Math.round(blhVal),
-          dp:Math.round(dpVal),
-          lr:+(lapseRate).toFixed(1),
-          pp:Math.round(ppVal),
-          time:times[i]
-        });
-      }
-      burzeData[ptIdx]=pointData;
-      if(ptIdx===0&&times.length>0){
-        burzeHours=times.slice(0,72);
-      }
-      loaded++;
-      document.getElementById('burze-progress').textContent=loaded+'/'+total;
-
-      if(loaded===total){
-        document.getElementById('burze-loading').style.display='none';
-        burzeLoaded=true;
-        document.getElementById('burze-update-time').textContent=
-          new Date().toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'})+' (akt.)';
-        // Znajdź indeks godziny odpowiadający TERAZ UTC
-        var nowUtc=new Date();
-        var nowStr=nowUtc.getFullYear()+'-'
-          +String(nowUtc.getMonth()+1).padStart(2,'0')+'-'
-          +String(nowUtc.getDate()).padStart(2,'0')+'T'
-          +String(nowUtc.getHours()).padStart(2,'0')+':00';
-        var nowIdx=0;
-        if(burzeHours&&burzeHours.length){
-          // Znajdź godzinę <= teraz
-          for(var bi=0;bi<burzeHours.length;bi++){
-            if(burzeHours[bi]<=nowStr) nowIdx=bi; else break;
-          }
-        }
-        burzeHourIdx=nowIdx; curStep=nowIdx*STEPS_PER_HOUR;
-        var slEl=document.getElementById('burze-slider');
-        if(slEl){slEl.value=nowIdx;}
-        console.log('NOW UTC:',nowStr,'=> idx:',nowIdx,'time:',burzeHours&&burzeHours[nowIdx]);
-
-        // DEBUG — pokaż top punkty burzowe h=0
-        var dbg=[];
-        STORM_GRID.forEach(function(pt,idx){
-          var d=burzeData[idx]&&burzeData[idx][0];
-          if(d&&d.prob>=20) dbg.push({lat:pt[0],lon:pt[1],prob:d.prob,wmo:d.wmo,lpi:d.lpi,dp:d.dp,cape:d.cape});
-        });
-        dbg.sort(function(a,b){return b.prob-a.prob;});
-        console.log('=== BURZE h=0 TOP 10 ===');
-        dbg.slice(0,10).forEach(function(p){
-          console.log(p.lat+'N '+p.lon+'E => '+p.prob+'% WMO='+p.wmo+' LPI='+p.lpi+' DP='+p.dp+'C CAPE='+p.cape);
-        });
-
-        redrawBurze();
-        buildStormChart();
-        // Pre-build wszystkich 72 gridów w tle
-        prebuildAllGrids(function(){
-          redrawBurze();
-          // Generuj komunikat natychmiast po zaladowaniu danych
-          setTimeout(generateAIAlert, 500);
-        });
-      }
+        loaded++;
+        if(progEl) progEl.textContent=loaded+'/'+total;
+      });
+      batchesDone++;
+      if(batchesDone===batches.length) onAllBatchesDone();
     })
     .catch(function(){
-      loaded++;
-      burzeData[ptIdx]=[];
-      document.getElementById('burze-progress').textContent=loaded+'/'+total;
-      if(loaded===total){
-        document.getElementById('burze-loading').style.display='none';
-        burzeLoaded=true;
-        renderBurzeHour(burzeHourIdx);
-      }
+      // Wypełnij puste dane dla tej partii
+      batch.forEach(function(_,localIdx){
+        burzeData[startIdx+localIdx]=[];
+        loaded++;
+        if(progEl) progEl.textContent=loaded+'/'+total;
+      });
+      batchesDone++;
+      if(batchesDone===batches.length) onAllBatchesDone();
     });
-    }, _delay);
-
-    // Throttling: 10 req / 500ms
   });
 }
 
@@ -2849,13 +3064,13 @@ var burzeSVGEl = null;
 var SUB   = 3;
 var SLAT  = 0;
 var SLON  = 0;
-var GRID_W = 64;
-var GRID_H = 40;
+var GRID_W = 96;
+var GRID_H = 60;
 
-var GEO_MIN_LAT = 47.0;
-var GEO_MAX_LAT = 55.5;
-var GEO_MIN_LON =  6.0;
-var GEO_MAX_LON = 24.5;
+var GEO_MIN_LAT = 49.0;
+var GEO_MAX_LAT = 55.0;
+var GEO_MIN_LON = 14.0;
+var GEO_MAX_LON = 24.2;
 
 // ── Stan animacji 15-min ─────────────────────────────────────────
 // Krok = 15 minut → 72h × 4 = 288 klatek
@@ -2885,6 +3100,7 @@ var burzeCtx    = null;
 // gridCache[hIdx] = Float32Array(GRID_W*GRID_H)
 // Budujemy wszystkie 72 godziny w tle po załadowaniu danych
 var gridCache     = {};       // godzinowe
+var rainGridCache = {};       // godzinowe pole opadu
 var gridCacheReady= false;
 var gridBuildJob  = null;     // scheduler
 
@@ -2898,7 +3114,7 @@ var bufB = null;
 var showBuf = 'A'; // który bufor jest aktualnie wyświetlany
 
 // ── IDW build grid dla jednej godziny ─────────────────────────────
-function buildGridForHour(hIdx) {
+function buildScalarGridForHour(hIdx, fieldName) {
   var out = new Float32Array(GRID_W * GRID_H);
   for(var j=0; j<GRID_H; j++) {
     for(var i=0; i<GRID_W; i++) {
@@ -2911,13 +3127,24 @@ function buildGridForHour(hIdx) {
         var dist2= dlat*dlat + dlon*dlon;
         if(dist2<0.0001) dist2=0.0001;
         var w = 1.0/(dist2*dist2);
-        var p = (burzeData[k]&&burzeData[k][hIdx]) ? burzeData[k][hIdx].prob : 0;
+        var p = 0;
+        if(burzeData[k]&&burzeData[k][hIdx]){
+          p = burzeData[k][hIdx][fieldName] || 0;
+        }
         wSum+=w; pSum+=w*p;
       }
       out[j*GRID_W+i] = wSum>0 ? pSum/wSum : 0;
     }
   }
   return out;
+}
+
+function buildGridForHour(hIdx) {
+  return buildScalarGridForHour(hIdx,'prob');
+}
+
+function buildRainGridForHour(hIdx) {
+  return buildScalarGridForHour(hIdx,'prc');
 }
 
 // ── Pre-build wszystkich godzin asynchronicznie (bez blokowania UI) ─
@@ -2946,6 +3173,13 @@ function getGrid(hIdx) {
   if(gridCache[hIdx]) return gridCache[hIdx];
   var g = buildGridForHour(hIdx);
   gridCache[hIdx] = g;
+  return g;
+}
+
+function getRainGrid(hIdx) {
+  if(rainGridCache[hIdx]) return rainGridCache[hIdx];
+  var g = buildRainGridForHour(hIdx);
+  rainGridCache[hIdx] = g;
   return g;
 }
 
@@ -2992,18 +3226,58 @@ function drawFrame(gridIgnored) {
   ctx.clearRect(0,0,W,H);
   var h = Math.floor(curStep/STEPS_PER_HOUR);
   h = Math.max(0,Math.min(h,71));
+  if(isRainLayerMode(burzeLayerMode)){
+    var rainGrid=getRainGrid(h);
+    if(burzeLayerMode==='rainanim'){
+      drawRainAnimFrame(ctx, map, rainGrid);
+      return;
+    }
+    for(var gy=0; gy<GRID_H-1; gy++){
+      for(var gx=0; gx<GRID_W-1; gx++){
+        var mm=rainGrid[gy*GRID_W+gx];
+        if(mm<0.15) continue;
+        var lat1=GEO_MAX_LAT - (GEO_MAX_LAT-GEO_MIN_LAT)*gy/(GRID_H-1);
+        var lon1=GEO_MIN_LON + (GEO_MAX_LON-GEO_MIN_LON)*gx/(GRID_W-1);
+        var lat2=GEO_MAX_LAT - (GEO_MAX_LAT-GEO_MIN_LAT)*(gy+1)/(GRID_H-1);
+        var lon2=GEO_MIN_LON + (GEO_MAX_LON-GEO_MIN_LON)*(gx+1)/(GRID_W-1);
+        var p1=map.latLngToLayerPoint([lat1,lon1]);
+        var p2=map.latLngToLayerPoint([lat2,lon2]);
+        var left=Math.min(p1.x,p2.x), top=Math.min(p1.y,p2.y);
+        var width=Math.max(1,Math.abs(p2.x-p1.x)+1), height=Math.max(1,Math.abs(p2.y-p1.y)+1);
+        var rc=rainToColor(mm);
+        var alpha=mm>=10?0.72:mm>=5?0.58:mm>=2?0.44:mm>=0.5?0.32:0.22;
+        var rgb = rc.fill==='#ff5a1f' ? '255,90,31'
+          : rc.fill==='#ffd43b' ? '255,212,59'
+          : rc.fill==='#9be7ff' ? '155,231,255'
+          : '59,130,246';
+        ctx.fillStyle='rgba('+rgb+','+alpha.toFixed(2)+')';
+        ctx.fillRect(left,top,width,height);
+      }
+    }
+    return;
+  }
   var zoom = map.getZoom();
   var radius = Math.max(22, Math.min(150, 13.5 * Math.pow(2, zoom-4)));
   STORM_GRID.forEach(function(pt,idx){
     var d = burzeData[idx]&&burzeData[idx][h];
-    if(!d||d.prob<STORM_THRESHOLD) return;
-    var prob = d.prob;
-    var px = map.latLngToContainerPoint([pt[0], pt[1]]);
+    if(!d) return;
+    var val = isRainLayerMode(burzeLayerMode)?(d.prc||0):d.prob;
+    if(isRainLayerMode(burzeLayerMode) ? val<0.2 : val<STORM_THRESHOLD) return;
+    var px = map.latLngToLayerPoint([pt[0], pt[1]]);
     if(px.x<-radius||px.x>W+radius||px.y<-radius||px.y>H+radius) return;
-    var col = probToRGBA(prob, 255);
+    var col = isRainLayerMode(burzeLayerMode)
+      ? (function(mm){
+          if(mm>=10)return [255,90,31,255];
+          if(mm>=5)return [255,212,59,255];
+          if(mm>=2)return [155,231,255,255];
+          return [59,130,246,255];
+        })(val)
+      : probToRGBA(val, 255);
     var r=col[0],g=col[1],b=col[2];
     var grad = ctx.createRadialGradient(px.x,px.y,0, px.x,px.y,radius);
-    var alpha = Math.min(1.0, (prob/100)*1.25);
+    var alpha = isRainLayerMode(burzeLayerMode)
+      ? Math.min(0.95, Math.max(0.25, val/10))
+      : Math.min(1.0, (val/100)*1.25);
     grad.addColorStop(0,   'rgba('+r+','+g+','+b+','+alpha.toFixed(2)+')');
     grad.addColorStop(0.4, 'rgba('+r+','+g+','+b+','+(alpha*0.75).toFixed(2)+')');
     grad.addColorStop(1,   'rgba('+r+','+g+','+b+',0)');
@@ -3016,11 +3290,12 @@ function drawFrame(gridIgnored) {
   STORM_GRID.forEach(function(pt,idx){
     var d=burzeData[idx]&&burzeData[idx][h];
     if(!d) return;
+    if(isRainLayerMode(burzeLayerMode)) return;
     var lpi=d.lpi||0;
     var prob=d.prob||0;
     // Pokaz ⚡ gdy aktywne wyladowania (LPI>0.5) LUB wysokie ryzyko (prob>=60)
     if(lpi<0.5&&prob<60) return;
-    var px=map.latLngToContainerPoint([pt[0],pt[1]]);
+    var px=map.latLngToLayerPoint([pt[0],pt[1]]);
     if(px.x<0||px.x>W||px.y<0||px.y>H) return;
     var fs, alpha;
     if(lpi>=5||prob>=80){
@@ -3054,22 +3329,29 @@ function renderBurzeMarkers(hIdx){
   if(!mapBurze)return;
   burzeMarkers.forEach(function(m){mapBurze.removeLayer(m);});
   burzeMarkers=[];
+  if(burzeLayerMode==='rainanim') return;
 
   STORM_GRID.forEach(function(pt,idx){
     var d=burzeData[idx]&&burzeData[idx][hIdx];
-    if(!d||d.prob<STORM_THRESHOLD)return;
-    var col=probToColor(d.prob);
-    var radius=d.prob>=80?14:d.prob>=60?11:8;
+    if(!d)return;
+    var isRain=isRainLayerMode(burzeLayerMode);
+    var metric=isRain?(d.prc||0):d.prob;
+    if(isRain ? metric<0.2 : metric<STORM_THRESHOLD)return;
+    var col=isRain?rainToColor(metric):probToColor(metric);
+    var radius=isRain?(burzeLayerMode==='rainanim'?(metric>=10?8:metric>=5?7:5):(metric>=10?11:metric>=5?9:7)):(metric>=80?14:metric>=60?11:8);
     var marker=L.circleMarker([pt[0],pt[1]],{
+      pane:'stormMarkers',
       radius:radius,
       color:col.stroke,
       weight:2,
       opacity:0.95,
       fillColor:col.fill,
-      fillOpacity:d.prob>=80?0.55:d.prob>=60?0.45:0.32
+      fillOpacity:isRain?(burzeLayerMode==='rainanim'?(metric>=5?0.24:0.16):(metric>=5?0.42:0.28)):(metric>=80?0.55:metric>=60?0.45:0.32)
     });
     marker.bindTooltip(
-      d.prob+'% | CAPE '+d.cape+' J/kg | LPI '+(d.lpi||0),
+      isRain
+        ? ((d.prc||0).toFixed(1)+' mm/h | PP '+(d.pp||0)+'% | WMO '+(d.wmo||0))
+        : (d.prob+'% | CAPE '+d.cape+' J/kg | LPI '+(d.lpi||0)),
       {direction:'top',offset:[0,-6],sticky:true}
     );
     marker.addTo(mapBurze);
@@ -3095,10 +3377,11 @@ function initCanvasOverlay() {
   burzeCanvas.style.width = size.x+'px';
   burzeCanvas.style.height = size.y+'px';
   burzeCanvas.style.pointerEvents = 'none';
-  burzeCanvas.style.zIndex = '400';
+  burzeCanvas.style.zIndex = '620';
   burzeCanvas.style.transform = 'none';
 
-  mapBurze.getContainer().appendChild(burzeCanvas);
+  var pane = mapBurze.getPane('stormCanvasPane') || mapBurze.getContainer();
+  pane.appendChild(burzeCanvas);
 
   function fixCanvas(){
     var s = mapBurze.getSize();
@@ -3130,13 +3413,20 @@ function initCanvasOverlay() {
     var sf=stepToHourFrac(curStep);
     var d=burzeData[best]&&burzeData[best][sf.h];
     if(!d)return;
-    var col=probToColor(d.prob);
+    var isRain=isRainLayerMode(burzeLayerMode);
+    var col=isRain?rainToColor(d.prc||0):probToColor(d.prob);
     L.popup().setLatLng(e.latlng)
       .setContent('<div style="font-size:.78rem;line-height:1.6">'+
-        '<b style="color:'+col.fill+'">'+d.prob+'% ryzyko</b><br>'+
-        'CAPE: <b>'+d.cape+'</b> J/kg &nbsp; LI: <b>'+d.li+'</b><br>'+
-        'LPI: '+(d.lpi||0)+' &nbsp; RH700: '+(d.rh700||0)+'%<br>'+
-        'Opady: '+d.prc+'mm/h &nbsp; CIN: '+d.cin+'</div>')
+        (isRain
+          ? ('<b style="color:'+col.fill+'">'+(d.prc||0).toFixed(1)+' mm/h opadu</b><br>'+
+             'PP: <b>'+(d.pp||0)+'%</b> &nbsp; WMO: <b>'+d.wmo+'</b><br>'+
+             'CAPE: '+d.cape+' J/kg &nbsp; LI: '+d.li+'<br>'+
+             'LPI: '+(d.lpi||0)+' &nbsp; RH700: '+(d.rh700||0)+'%')
+          : ('<b style="color:'+col.fill+'">'+d.prob+'% ryzyko</b><br>'+
+             'CAPE: <b>'+d.cape+'</b> J/kg &nbsp; LI: <b>'+d.li+'</b><br>'+
+             'LPI: '+(d.lpi||0)+' &nbsp; RH700: '+(d.rh700||0)+'%<br>'+
+             'Opady: '+d.prc+'mm/h &nbsp; CIN: '+d.cin))
+        +'</div>')
       .openOn(mapBurze);
   });
 }
@@ -3239,16 +3529,24 @@ function getMyLocationData(hIdx){
 }
 
 function updateBurzePanel(d){
-  var col=probToColor(d.prob);
+  var isRain=isRainLayerMode(burzeLayerMode);
+  var mainVal=isRain?(d.prc||0):d.prob;
+  var col=isRain?rainToColor(mainVal):probToColor(mainVal);
+  var rainLabel=describeRainIntensity(d.prc||0);
   var fill=document.getElementById('sg-fill');
   var val=document.getElementById('sg-val');
-  if(fill){fill.style.width=d.prob+'%';fill.style.background=col.fill;}
+  if(fill){
+    fill.style.width=(isRain?Math.min(100,mainVal*10):mainVal)+'%';
+    fill.style.background=col.fill;
+  }
   if(val){
     val.style.color=col.fill;
-    val.textContent=d.prob+'% -- '+
-      (d.prob>=80?'Ekstremalne ⚡⚡':d.prob>=60?'Wysokie ⚡':
-       d.prob>=40?'Umiarkowane':d.prob>=20?'Niskie':'Brak ryzyka');
+    val.textContent=isRain
+      ? ((mainVal||0).toFixed(1)+' mm/h -- '+(mainVal>=10?'Bardzo mocny':mainVal>=5?'Mocny':mainVal>=2?'Umiarkowany':mainVal>=0.2?'Lekki':'Brak opadu'))
+      : (d.prob+'% -- '+(d.prob>=80?'Ekstremalne ⚡⚡':d.prob>=60?'Wysokie ⚡':
+         d.prob>=40?'Umiarkowane':d.prob>=20?'Niskie':'Brak ryzyka'));
   }
+  if(isRain&&val) val.textContent=(mainVal||0).toFixed(1)+' mm/h -- '+rainLabel;
   var set=function(id,v){var e=document.getElementById(id);if(e)e.textContent=v;};
   set('sp-cape',d.cape+' J/kg');
   set('sp-li',d.li);
@@ -3259,6 +3557,22 @@ function updateBurzePanel(d){
   set('sp-lpi',(d.lpi||0).toFixed?+(d.lpi||0).toFixed(2):d.lpi||0);
   set('sp-rh700',(d.rh700||0)+'%');
   set('sp-blh',(d.blh||0)+' m');
+  set('rain-zone-now',(d.prc||0).toFixed(1)+' mm/h');
+  set('rain-zone-status',rainLabel);
+  set('rain-zone-pp',(d.pp||0)+'%');
+  set('rain-zone-wmo',d.wmo);
+  set('rain-zone-layer',burzeLayerMode==='rainanim'?'Test anim.':(isRain?'Aktualna warstwa':'Dane pomocnicze'));
+  if(burzeLayerMode==='rainanim'){
+    set('rain-zone-desc','Tryb testowy scala pola opadu z modelu w miekkie, nakladajace sie pasma z jasnym tlem chmur, podobnie jak na referencyjnej mapie.');
+  }
+  set('rain-zone-desc',
+    isRain
+      ? 'Aktywna warstwa pokazuje strefę opadową z modelu dla wybranej godziny. Kolory odpowiadają intensywności w mm/h.'
+      : 'Panel opadowy korzysta z tych samych aktualizacji modelowych i podpowiada, czy razem z ryzykiem burzowym pojawia się deszcz.'
+  );
+  if(burzeLayerMode==='rainanim'){
+    set('rain-zone-desc','Tryb testowy scala pola opadu z modelu w miekkie, nakladajace sie pasma z jasnym tlem chmur, podobnie jak na referencyjnej mapie.');
+  }
 }
 
 // ── Wykres ─────────────────────────────────────────────────────────
@@ -3274,22 +3588,34 @@ function buildStormChart(){
     });
   }
   var myData=burzeData[myIdx]||[];
+  var isRain=isRainLayerMode(burzeLayerMode);
   var labels=myData.map(function(d,i){
     if(i%6===0){var dt=new Date(d.time||'');return isNaN(dt)?'h'+i:String(dt.getHours()).padStart(2,'0')+':00';}
     return '';
   });
-  var probs=myData.map(function(d){return d.prob;});
-  var colors=myData.map(function(d){return probToColor(d.prob).fill;});
+  var probs=myData.map(function(d){return isRain?+(d.prc||0).toFixed(1):d.prob;});
+  var colors=myData.map(function(d){return isRain?rainToColor(d.prc||0).fill:probToColor(d.prob).fill;});
+  var chartTitle=document.getElementById('storm-chart-title');
+  if(chartTitle){
+    chartTitle.textContent=isRain
+      ? '☔ Intensywność opadu — Twoja lokalizacja'
+      : '📊 Prawdopodob. burzy — Twoja lokalizacja';
+  }
+  if(chartTitle){
+    if(burzeLayerMode==='rainanim') chartTitle.textContent='Strefa test anim. - Twoja lokalizacja';
+    else if(isRain) chartTitle.textContent='Strefa opadowa - Twoja lokalizacja';
+    else chartTitle.textContent='Prawdopodob. burzy - Twoja lokalizacja';
+  }
   if(burzeChartInst)burzeChartInst.destroy();
   burzeChartInst=new Chart(canvas,{
     type:'bar',
     data:{labels:labels,datasets:[{data:probs,backgroundColor:colors,borderColor:colors,borderWidth:0,borderRadius:2}]},
     options:{
       responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ctx.parsed.y+'% ryzyko';}}}},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return isRain?ctx.parsed.y+' mm/h opadu':ctx.parsed.y+'% ryzyko';}}}},
       scales:{
         x:{ticks:{color:'#6b90b0',font:{size:8},maxRotation:0},grid:{color:'rgba(26,53,80,.3)'}},
-        y:{min:0,max:100,ticks:{color:'#6b90b0',font:{size:8},callback:function(v){return v+'%';}},grid:{color:'rgba(26,53,80,.3)'}}
+        y:{min:0,max:isRain?12:100,ticks:{color:'#6b90b0',font:{size:8},callback:function(v){return isRain?v+' mm':v+'%';}},grid:{color:'rgba(26,53,80,.3)'}}
       },
       onClick:function(e,els){
         if(els.length){
@@ -3330,6 +3656,7 @@ function initBurze(){
   if(burzeInit)return;
   burzeInit=true;
   initMapBurze();
+  updateBurzeLegend();
   setTimeout(function(){loadBurzeData(false);},600);
 
   // Dane ICON aktualizowane co ~3h — pobieraj co 3h
