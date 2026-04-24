@@ -1,0 +1,19 @@
+# Włącz silnik przekierowań
+RewriteEngine On
+
+# 1. WYMUSZENIE HTTPS (Zawsze używaj bezpiecznego połączenia)
+# To jest bardzo ważne dla Google – za to dostajesz "punkty" w rankingu.
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# 2. OBSŁUGA FOLDERÓW (en, de)
+# Te linie upewniają się, że serwer najpierw szuka folderu, 
+# a potem otwiera w nim plik index.html bez błędnych przekierowań.
+Options +FollowSymLinks -MultiViews
+DirectoryIndex index.html
+
+# 3. UNIKANIE BŁĘDÓW PRZEKIEROWAŃ
+# Jeśli ktoś wpisze adres bez ukośnika (np. /en), serwer sam go doda, 
+# ale nie wyrzuci użytkownika na stronę główną.
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^(.*[^/])$ /$1/ [L,R=301]
