@@ -277,6 +277,43 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
   background:rgba(4,12,24,.88);border:1px solid var(--border);
   padding:3px 8px;border-radius:4px;font-family:monospace;
 }
+.wind-overlay-panel{
+  position:absolute;left:50%;bottom:10px;transform:translateX(-50%);
+  z-index:510;min-width:360px;max-width:min(760px,calc(100% - 160px));
+  background:rgba(4,12,24,.9);border:1px solid rgba(26,53,80,.95);
+  border-radius:10px;padding:8px 10px;backdrop-filter:blur(8px);
+  box-shadow:0 6px 20px rgba(0,0,0,.45);display:none;
+}
+.wind-overlay-panel.show{display:block}
+.wind-overlay-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.wind-overlay-title{font-size:.58rem;font-weight:700;letter-spacing:1.6px;color:var(--text2);text-transform:uppercase;white-space:nowrap}
+.wind-overlay-time{font-size:1rem;font-weight:800;color:#1fde8a;font-family:monospace;letter-spacing:.8px;min-width:104px}
+.wind-overlay-meta{font-size:.55rem;color:var(--text2);font-family:monospace;white-space:nowrap}
+.wind-overlay-refresh{
+  margin-left:auto;font-size:.54rem;padding:4px 8px;border-radius:5px;border:1px solid var(--border);
+  background:rgba(255,255,255,.04);color:var(--text2);cursor:pointer;transition:all .15s
+}
+.wind-overlay-refresh:hover{border-color:var(--accent);color:var(--accent)}
+.wind-overlay-slider{display:flex;align-items:center;gap:10px;margin-top:8px}
+.wind-overlay-slider .time-slider{flex:1}
+.wind-overlay-offset{font-size:.6rem;color:var(--blue2);font-family:monospace;min-width:62px;text-align:right}
+.wind-overlay-status{font-size:.55rem;color:var(--text2);margin-top:6px;min-height:1em}
+.wind-overlay-status.ok{color:#1fde8a}
+.wind-overlay-status.err{color:#ff6b6b}
+.wind-legend{
+  display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:4px;margin-top:8px
+}
+.wind-legend-item{
+  display:flex;flex-direction:column;gap:3px;padding:6px 7px;border-radius:6px;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05)
+}
+.wind-legend-swatch{height:6px;border-radius:999px}
+.wind-legend-label{font-size:.52rem;color:#fff;font-family:monospace}
+.wind-legend-sub{font-size:.46rem;color:var(--text2);font-family:monospace}
+.wind-canvas-layer{
+  position:absolute;inset:0;z-index:455;pointer-events:none;display:none
+}
+.wind-canvas-layer.show{display:block}
 .blk-counter{
   position:absolute;bottom:38px;left:10px;z-index:500;
   background:rgba(4,12,24,.90);border:1px solid rgba(255,224,51,.4);
@@ -344,6 +381,24 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
 .fc-modal-lbl{font-size:.54rem;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px}
 .fc-modal-val{font-size:1rem;font-weight:700;color:#fff}
 .fc-modal-unit{font-size:.6rem;color:var(--text2)}
+
+@media (max-width:920px){
+  .panel-left{width:280px}
+  .lyr-panel{min-width:160px}
+  .wind-overlay-panel{left:8px;right:8px;bottom:56px;transform:none;min-width:0;max-width:none}
+  .wind-legend{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media (max-width:680px){
+  .topbar{padding:0 10px}
+  .logo{display:none}
+  .nav-item{font-size:.62rem;padding:0 10px}
+  .panel-left{display:none}
+  .wind-overlay-top{gap:8px}
+  .wind-overlay-time{font-size:.88rem;min-width:92px}
+  .wind-overlay-refresh{margin-left:0}
+  .wind-overlay-slider{gap:8px}
+  .wind-legend{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
 
 /* ═══════════════════════════════════════════
    POPUP po kliknięciu w mapę
@@ -705,7 +760,7 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
         <div class="lyr-row" onclick="toggleLayer('wind')" id="row-wind">
           <div class="lyr-chk" id="chk-wind" style="color:#1fde8a"></div>
           <div class="lyr-dot" style="background:linear-gradient(#1fde8a,#064030)"></div>
-          <div class="lyr-label">Wiatr<small>OpenWeatherMap</small></div>
+          <div class="lyr-label">Wiatr<small>Open-Meteo particles</small></div>
         </div>
 
         <div class="lyr-row" onclick="toggleLayer('temp')" id="row-temp">
@@ -744,6 +799,39 @@ body{background:var(--bg);color:var(--text);font-family:'Segoe UI',Arial,sans-se
       </div>
 
       <div class="map-badge" id="map-badge-txt">RADAR...</div>
+      <canvas id="radar-wind-canvas" class="wind-canvas-layer"></canvas>
+      <div class="wind-overlay-panel" id="radar-wind-panel">
+        <div class="wind-overlay-top">
+          <span class="wind-overlay-title">Wind Flow Europe</span>
+          <span class="wind-overlay-time" id="radar-wind-time">--:--</span>
+          <span class="wind-overlay-meta" id="radar-wind-meta">Open-Meteo / zakres -24h +24h</span>
+          <button class="wind-overlay-refresh" onclick="refreshRadarWind(true)">Odswiez</button>
+        </div>
+        <div class="wind-overlay-slider">
+          <button class="play-btn" id="radar-wind-play" onclick="toggleRadarWindPlayback()" title="Animuj">▶</button>
+          <input type="range" class="time-slider" id="radar-wind-slider" min="-24" max="24" value="0" oninput="setRadarWindOffset(this.value)">
+          <span class="wind-overlay-offset" id="radar-wind-offset">+0 h</span>
+        </div>
+        <div class="wind-overlay-status" id="radar-wind-status">Warstwa ukryta. Wlacz "Wiatr", aby pobrac siatke dla Europy.</div>
+        <div class="wind-legend">
+          <div class="wind-legend-item"><div class="wind-legend-swatch" style="background:#b0f4ff"></div><div class="wind-legend-label">0-5</div><div class="wind-legend-sub">km/h</div></div>
+          <div class="wind-legend-item"><div class="wind-legend-swatch" style="background:#6fe5ff"></div><div class="wind-legend-label">5-10</div><div class="wind-legend-sub">km/h</div></div>
+          <div class="wind-legend-item"><div class="wind-legend-swatch" style="background:#29ccff"></div><div class="wind-legend-label">10-15</div><div class="wind-legend-sub">km/h</div></div>
+          <div class="wind-legend-item"><div class="wind-legend-swatch" style="background:#25a8ff"></div><div class="wind-legend-label">15-20</div><div class="wind-legend-sub">km/h</div></div>
+          <div class="wind-legend-item"><div class="wind-legend-swatch" style="background:#1fe28a"></div><div class="wind-legend-label">20-25</div><div class="wind-legend-sub">km/h</div></div>
+          <div class="wind-legend-item"><div class="wind-legend-swatch" style="background:#22d46a"></div><div class="wind-legend-label">25-30</div><div class="wind-legend-sub">km/h</div></div>
+          <div class="wind-legend-item"><div class="wind-legend-swatch" style="background:#50e83a"></div><div class="wind-legend-label">30-35</div><div class="wind-legend-sub">km/h</div></div>
+          <div class="wind-legend-item"><div class="wind-legend-swatch" style="background:#a8f020"></div><div class="wind-legend-label">35-40</div><div class="wind-legend-sub">km/h</div></div>
+          <div class="wind-legend-item"><div class="wind-legend-swatch" style="background:#ffe45a"></div><div class="wind-legend-label">40-45</div><div class="wind-legend-sub">km/h</div></div>
+          <div class="wind-legend-item"><div class="wind-legend-swatch" style="background:#ffcc00"></div><div class="wind-legend-label">45-50</div><div class="wind-legend-sub">km/h</div></div>
+          <div class="wind-legend-item"><div class="wind-legend-swatch" style="background:#ffaa00"></div><div class="wind-legend-label">50-55</div><div class="wind-legend-sub">km/h</div></div>
+          <div class="wind-legend-item"><div class="wind-legend-swatch" style="background:#ff8c1a"></div><div class="wind-legend-label">55-60</div><div class="wind-legend-sub">km/h</div></div>
+          <div class="wind-legend-item"><div class="wind-legend-swatch" style="background:#ff6b35"></div><div class="wind-legend-label">60-65</div><div class="wind-legend-sub">km/h</div></div>
+          <div class="wind-legend-item"><div class="wind-legend-swatch" style="background:#ff4d4d"></div><div class="wind-legend-label">65-70</div><div class="wind-legend-sub">km/h</div></div>
+          <div class="wind-legend-item"><div class="wind-legend-swatch" style="background:#e0002a"></div><div class="wind-legend-label">70-80</div><div class="wind-legend-sub">km/h</div></div>
+          <div class="wind-legend-item"><div class="wind-legend-swatch" style="background:#b000b0"></div><div class="wind-legend-label">80+</div><div class="wind-legend-sub">km/h</div></div>
+        </div>
+      </div>
       <button class="btn-rc" onclick="rc()" title="Moja pozycja">⊙</button>
     </div>
   </div><!-- /panel-right -->
@@ -1286,6 +1374,562 @@ function dc(d){return DIRS[Math.round(d/22.5)%16];}
 function bf(k){var t=[1,6,12,20,29,39,50,62,75,89,103,117];for(var i=0;i<t.length;i++)if(k<t[i])return i;return 12;}
 function we(c){if(c===0)return"☀";if(c<=2)return"🌤";if(c<=3)return"⛅";if(c<=48)return"🌥";if(c<=65)return"🌧";if(c<=77)return"❄";if(c<=82)return"🌦";if(c>=95)return"⛈";return"🌡";}
 
+var RADAR_WIND_HISTORY_H=24;
+var RADAR_WIND_FORECAST_H=24;
+var RADAR_WIND_CACHE_MS=45*60*1000;
+var RADAR_WIND_COOLDOWN_MS=30*60*1000;
+var RADAR_WIND_BATCH_SIZE=90;
+var RADAR_WIND_CACHE_KEY="stormchaser_radar_wind_cache_v1";
+var RADAR_WIND_EU={minLat:34,maxLat:72,minLon:-25,maxLon:45};
+var RADAR_WIND_PL={minLat:49,maxLat:55.8,minLon:14,maxLon:24.5};
+var RADAR_WIND_COLORS=[
+  {max:5,  color:"#b0f4ff"},
+  {max:10, color:"#6fe5ff"},
+  {max:15, color:"#29ccff"},
+  {max:20, color:"#25a8ff"},
+  {max:25, color:"#1fe28a"},
+  {max:30, color:"#22d46a"},
+  {max:35, color:"#50e83a"},
+  {max:40, color:"#a8f020"},
+  {max:45, color:"#ffe45a"},
+  {max:50, color:"#ffcc00"},
+  {max:55, color:"#ffaa00"},
+  {max:60, color:"#ff8c1a"},
+  {max:65, color:"#ff6b35"},
+  {max:70, color:"#ff4d4d"},
+  {max:80, color:"#e0002a"},
+  {max:1e9,color:"#b000b0"}
+];
+var radarWindState={
+  enabled:false,loading:false,ready:false,error:"",
+  canvas:null,ctx:null,offscreen:null,offCtx:null,
+  samplePoints:null,gridPoints:[],timestamps:[],
+  centerSlot:0,selectedIndex:0,selectedOffset:0,updateTime:null,lastLoadedAt:0,
+  fieldCache:{},screenField:null,particles:[],needsFieldRefresh:true,forceRespawn:true,
+  raf:0,lastFrameTs:0,playTimer:null,cooldownUntil:0,mapMoving:false
+};
+function radarWindFmtOffset(v){
+  var n=parseInt(v,10)||0;
+  return (n>0?"+":"")+n+" h";
+}
+function radarWindFmtDate(ts,shortOnly){
+  if(!ts)return"--";
+  return new Intl.DateTimeFormat("pl-PL",shortOnly
+    ? {hour:"2-digit",minute:"2-digit"}
+    : {weekday:"short",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}
+  ).format(new Date(ts));
+}
+function radarWindParseUtc(iso){
+  if(!iso)return NaN;
+  return Date.parse(/Z$/.test(iso)?iso:(iso+"Z"));
+}
+function radarWindInBounds(lat,lng,b){
+  return lat>=b.minLat&&lat<=b.maxLat&&lng>=b.minLon&&lng<=b.maxLon;
+}
+function radarWindColor(speed){
+  for(var i=0;i<RADAR_WIND_COLORS.length;i++) if(speed<RADAR_WIND_COLORS[i].max) return RADAR_WIND_COLORS[i].color;
+  return RADAR_WIND_COLORS[RADAR_WIND_COLORS.length-1].color;
+}
+function radarWindSetStatus(text,cls){
+  var el=document.getElementById("radar-wind-status");
+  if(!el)return;
+  el.className="wind-overlay-status"+(cls?" "+cls:"");
+  el.textContent=text;
+}
+function radarWindHourNow(){
+  return Math.round(Date.now()/3600000)*3600000;
+}
+function radarWindSaveCache(){
+  try{
+    localStorage.setItem(RADAR_WIND_CACHE_KEY,JSON.stringify({
+      savedAt:Date.now(),
+      points:radarWindState.gridPoints,
+      timestamps:radarWindState.timestamps,
+      updateTime:radarWindState.updateTime
+    }));
+  }catch(_e){}
+}
+function radarWindLoadCache(){
+  try{
+    var raw=localStorage.getItem(RADAR_WIND_CACHE_KEY);
+    if(!raw)return null;
+    var parsed=JSON.parse(raw);
+    if(!parsed||!parsed.savedAt||!parsed.points||!parsed.timestamps)return null;
+    return parsed;
+  }catch(_e){
+    return null;
+  }
+}
+function radarWindApplyCache(cache,maxAgeMs){
+  if(!cache||!cache.savedAt||((Date.now()-cache.savedAt)>(maxAgeMs||RADAR_WIND_CACHE_MS)))return false;
+  radarWindApplyData(cache.points||[],cache.timestamps||[],cache.updateTime||radarWindHourNow());
+  radarWindState.lastLoadedAt=cache.savedAt;
+  radarWindState.error="";
+  radarWindSetStatus("Uzyto lokalnego cache Open-Meteo, bez nowego requestu.","ok");
+  radarWindStartAnim();
+  return true;
+}
+function radarWindBuildPoints(){
+  if(radarWindState.samplePoints)return radarWindState.samplePoints.slice();
+  var pts=[];
+  function addGrid(bounds,latStep,lonStep,dense){
+    for(var lat=bounds.minLat;lat<=bounds.maxLat+0.001;lat+=latStep){
+      for(var lon=bounds.minLon;lon<=bounds.maxLon+0.001;lon+=lonStep){
+        if(!dense && radarWindInBounds(lat,lon,RADAR_WIND_PL)) continue;
+        pts.push({lat:+lat.toFixed(3),lon:+lon.toFixed(3),dense:!!dense});
+      }
+    }
+  }
+  addGrid(RADAR_WIND_EU,2.4,3.2,false);
+  addGrid(RADAR_WIND_PL,0.75,0.75,true);
+  radarWindState.samplePoints=pts;
+  return pts.slice();
+}
+function radarWindEnsureCanvas(){
+  if(radarWindState.canvas&&radarWindState.ctx)return true;
+  var canvas=document.getElementById("radar-wind-canvas");
+  if(!canvas)return false;
+  // Move canvas inside the Leaflet container so it shares the same coordinate space
+  // as latLngToContainerPoint(). Without this, pan offsets are doubled.
+  if(mapObj&&canvas.parentNode!==mapObj.getContainer()){
+    mapObj.getContainer().appendChild(canvas);
+    canvas.style.position="absolute";
+    canvas.style.top="0";
+    canvas.style.left="0";
+    canvas.style.width="100%";
+    canvas.style.height="100%";
+    canvas.style.pointerEvents="none";
+    canvas.style.zIndex="455";
+  }
+  radarWindState.canvas=canvas;
+  radarWindState.ctx=canvas.getContext("2d");
+  return true;
+}
+function radarWindResizeCanvas(){
+  if(!mapObj||!radarWindEnsureCanvas())return;
+  var size=mapObj.getSize();
+  var dpr=window.devicePixelRatio||1;
+  var canvas=radarWindState.canvas;
+  var w=Math.max(1,Math.round(size.x*dpr));
+  var h=Math.max(1,Math.round(size.y*dpr));
+  // Only set pixel dimensions, not style dimensions - let CSS inset:0 handle sizing
+  canvas.width=w;
+  canvas.height=h;
+  radarWindState.ctx.setTransform(dpr,0,0,dpr,0,0);
+  // Resize offscreen canvas too
+  if(radarWindState.offscreen){
+    radarWindState.offscreen.width=w;
+    radarWindState.offscreen.height=h;
+    radarWindState.offCtx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  radarWindState.needsFieldRefresh=true;
+  radarWindState.forceRespawn=true;
+}
+function radarWindClearCanvas(){
+  if(!radarWindState.ctx||!radarWindState.canvas)return;
+  radarWindState.ctx.save();
+  radarWindState.ctx.setTransform(1,0,0,1,0,0);
+  radarWindState.ctx.clearRect(0,0,radarWindState.canvas.width,radarWindState.canvas.height);
+  radarWindState.ctx.restore();
+  if(radarWindState.offCtx&&radarWindState.offscreen){
+    radarWindState.offCtx.save();
+    radarWindState.offCtx.setTransform(1,0,0,1,0,0);
+    radarWindState.offCtx.clearRect(0,0,radarWindState.offscreen.width,radarWindState.offscreen.height);
+    radarWindState.offCtx.restore();
+  }
+}
+function radarWindBindMapEvents(){
+  if(!mapObj||mapObj._radarWindBound)return;
+  mapObj._radarWindBound=true;
+  // On zoom/resize: resize canvas and respawn particles for new view
+  ["zoomend","resize"].forEach(function(evt){
+    mapObj.on(evt,function(){
+      if(!radarWindState.enabled||!layers.wind.on)return;
+      radarWindResizeCanvas();
+      radarWindClearCanvas();
+      radarWindState.forceRespawn=true;
+    });
+  });
+}
+function radarWindUpdatePanel(){
+  var panel=document.getElementById("radar-wind-panel");
+  var canvas=document.getElementById("radar-wind-canvas");
+  if(panel)panel.classList.toggle("show",!!layers.wind.on);
+  if(canvas)canvas.classList.toggle("show",!!layers.wind.on);
+  if(!layers.wind.on)radarWindSetStatus('Warstwa ukryta. Wlacz "Wiatr", aby pobrac siatke dla Europy.',"");
+}
+function radarWindUpdateLabels(){
+  var slider=document.getElementById("radar-wind-slider");
+  var offsetEl=document.getElementById("radar-wind-offset");
+  var timeEl=document.getElementById("radar-wind-time");
+  var metaEl=document.getElementById("radar-wind-meta");
+  if(offsetEl)offsetEl.textContent=radarWindFmtOffset(radarWindState.selectedOffset);
+  if(slider){
+    slider.value=String(radarWindState.selectedOffset);
+    slider.min=String(-radarWindState.centerSlot);
+    slider.max=String(Math.max(0,radarWindState.timestamps.length-radarWindState.centerSlot-1));
+  }
+  if(timeEl){
+    var ts=radarWindState.timestamps[radarWindState.selectedIndex];
+    timeEl.textContent=ts?radarWindFmtDate(ts,true):"--:--";
+  }
+  if(metaEl){
+    var updateTxt=radarWindState.updateTime?radarWindFmtDate(radarWindState.updateTime,false):"--";
+    metaEl.textContent="Open-Meteo / update "+updateTxt+" / Europa + PL dense";
+  }
+}
+function setRadarWindOffset(val){
+  if(!radarWindState.timestamps.length){
+    radarWindState.selectedOffset=0;
+    radarWindUpdateLabels();
+    return;
+  }
+  var min=-radarWindState.centerSlot;
+  var max=Math.max(0,radarWindState.timestamps.length-radarWindState.centerSlot-1);
+  var offset=Math.max(min,Math.min(max,parseInt(val,10)||0));
+  radarWindState.selectedOffset=offset;
+  radarWindState.selectedIndex=radarWindState.centerSlot+offset;
+  radarWindState.needsFieldRefresh=true;
+  radarWindState.forceRespawn=true;
+  radarWindUpdateLabels();
+  if(radarWindState.ready){
+    var stamp=radarWindState.timestamps[radarWindState.selectedIndex];
+    radarWindSetStatus("Animacja dla "+radarWindFmtDate(stamp,false),"ok");
+  }
+  radarWindStartAnim();
+}
+function radarWindTogglePlayback(forceStop){
+  var btn=document.getElementById("radar-wind-play");
+  if(radarWindState.playTimer||forceStop){
+    clearInterval(radarWindState.playTimer);
+    radarWindState.playTimer=null;
+    if(btn)btn.textContent="▶";
+    return;
+  }
+  if(!radarWindState.ready)return;
+  if(btn)btn.textContent="❚❚";
+  radarWindState.playTimer=setInterval(function(){
+    var slider=document.getElementById("radar-wind-slider");
+    if(!slider)return;
+    var min=parseInt(slider.min,10)||0,max=parseInt(slider.max,10)||0,next=radarWindState.selectedOffset+1;
+    if(next>max)next=min;
+    setRadarWindOffset(next);
+  },1400);
+}
+function toggleRadarWindPlayback(){radarWindTogglePlayback(false);}
+function radarWindOffsetLatLng(lat,lng,vec,dtHours){
+  var dLat=(vec.v*dtHours)/111;
+  var cosLat=Math.cos(lat*Math.PI/180);
+  if(Math.abs(cosLat)<0.15)cosLat=cosLat<0?-0.15:0.15;
+  var dLon=(vec.u*dtHours)/(111*cosLat);
+  return {lat:lat+dLat,lng:lng+dLon};
+}
+function radarWindBuildHourField(hourIdx){
+  if(radarWindState.fieldCache[hourIdx])return radarWindState.fieldCache[hourIdx];
+  var binSize=3.2,bins={},pts=[];
+  radarWindState.gridPoints.forEach(function(pt){
+    var speed=pt.speeds[hourIdx],dir=pt.dirs[hourIdx];
+    if(speed==null||dir==null||isNaN(speed)||isNaN(dir))return;
+    var toward=((dir+180)%360)*Math.PI/180;
+    var rec={lat:pt.lat,lng:pt.lon,speed:+speed,u:Math.sin(toward)*speed,v:Math.cos(toward)*speed};
+    var key=Math.floor((rec.lat-RADAR_WIND_EU.minLat)/binSize)+":"+Math.floor((rec.lng-RADAR_WIND_EU.minLon)/binSize);
+    if(!bins[key])bins[key]=[];
+    bins[key].push(rec);
+    pts.push(rec);
+  });
+  radarWindState.fieldCache[hourIdx]={binSize:binSize,bins:bins,points:pts};
+  return radarWindState.fieldCache[hourIdx];
+}
+function radarWindSampleLatLng(lat,lng,field){
+  if(!field||!field.points.length||!radarWindInBounds(lat,lng,RADAR_WIND_EU))return null;
+  var row=Math.floor((lat-RADAR_WIND_EU.minLat)/field.binSize);
+  var col=Math.floor((lng-RADAR_WIND_EU.minLon)/field.binSize);
+  var picks=[],radius;
+  for(radius=0;radius<3&&picks.length<8;radius++){
+    for(var dy=-radius;dy<=radius;dy++){
+      for(var dx=-radius;dx<=radius;dx++){
+        var list=field.bins[(row+dy)+":"+(col+dx)];
+        if(list)Array.prototype.push.apply(picks,list);
+      }
+    }
+  }
+  if(!picks.length)picks=field.points;
+  var sumW=0,sumU=0,sumV=0,sumS=0;
+  for(var i=0;i<picks.length;i++){
+    var p=picks[i];
+    var latKm=(p.lat-lat)*111;
+    var lonKm=(p.lng-lng)*111*Math.cos(((p.lat+lat)/2)*Math.PI/180);
+    var dist2=latKm*latKm+lonKm*lonKm;
+    if(dist2<4)return {u:p.u,v:p.v,speed:p.speed};
+    var w=1/(dist2+6);
+    sumW+=w;sumU+=p.u*w;sumV+=p.v*w;sumS+=p.speed*w;
+  }
+  return sumW?{u:sumU/sumW,v:sumV/sumW,speed:sumS/sumW}:null;
+}
+function radarWindBuildScreenField(){
+  if(!mapObj||!radarWindState.ready)return null;
+  radarWindResizeCanvas();
+  var size=mapObj.getSize();
+  var cell=mapObj.getZoom()>=7?26:32;
+  var cols=Math.floor(size.x/cell)+2,rows=Math.floor(size.y/cell)+2;
+  var vectors=new Array(cols*rows);
+  var hourField=radarWindBuildHourField(radarWindState.selectedIndex);
+  for(var row=0;row<rows;row++){
+    for(var col=0;col<cols;col++){
+      var x=Math.min(size.x,col*cell),y=Math.min(size.y,row*cell);
+      var ll=mapObj.containerPointToLatLng([x,y]);
+      if(!radarWindInBounds(ll.lat,ll.lng,RADAR_WIND_EU)){vectors[row*cols+col]=null;continue;}
+      var vec=radarWindSampleLatLng(ll.lat,ll.lng,hourField);
+      if(!vec||vec.speed<1){vectors[row*cols+col]=null;continue;}
+      var next=radarWindOffsetLatLng(ll.lat,ll.lng,vec,0.16);
+      var p2=mapObj.latLngToContainerPoint([next.lat,next.lng]);
+      var vx=(p2.x-x)*0.315,vy=(p2.y-y)*0.315;
+      vectors[row*cols+col]=(!isFinite(vx)||!isFinite(vy)||(Math.abs(vx)+Math.abs(vy)<0.05))?null:{x:vx,y:vy,speed:vec.speed};
+    }
+  }
+  radarWindState.screenField={cell:cell,cols:cols,rows:rows,width:size.x,height:size.y,vectors:vectors};
+  radarWindState.needsFieldRefresh=false;
+  return radarWindState.screenField;
+}
+// ── GEO-ANCHORED PARTICLES ──────────────────────────────────────────────────
+// Particles are stored in geographic coords (lat/lng).
+// Each frame they are projected to screen pixels by Leaflet, so they stay
+// fixed relative to the terrain regardless of pan or zoom.
+
+function radarWindSpawnParticleGeo(p){
+  var hourField=radarWindBuildHourField(radarWindState.selectedIndex);
+  if(!hourField||!hourField.points.length){
+    if(!p)p={};
+    p.lat=52;p.lng=20;p.age=0;p.maxAge=40;p.speed=0;return p;
+  }
+  var bounds=mapObj.getBounds();
+  var polandView=bounds.intersects(L.latLngBounds(
+    [RADAR_WIND_PL.minLat,RADAR_WIND_PL.minLon],[RADAR_WIND_PL.maxLat,RADAR_WIND_PL.maxLon]));
+  var minLat=Math.max(RADAR_WIND_EU.minLat,bounds.getSouth()-1);
+  var maxLat=Math.min(RADAR_WIND_EU.maxLat,bounds.getNorth()+1);
+  var minLng=Math.max(RADAR_WIND_EU.minLon,bounds.getWest()-1);
+  var maxLng=Math.min(RADAR_WIND_EU.maxLon,bounds.getEast()+1);
+  for(var i=0;i<40;i++){
+    var lat,lng;
+    if(polandView&&i<20){
+      lat=RADAR_WIND_PL.minLat+Math.random()*(RADAR_WIND_PL.maxLat-RADAR_WIND_PL.minLat);
+      lng=RADAR_WIND_PL.minLon+Math.random()*(RADAR_WIND_PL.maxLon-RADAR_WIND_PL.minLon);
+    } else {
+      lat=minLat+Math.random()*(maxLat-minLat);
+      lng=minLng+Math.random()*(maxLng-minLng);
+    }
+    var vec=radarWindSampleLatLng(lat,lng,hourField);
+    if(vec&&vec.speed>=1){
+      if(!p)p={};
+      p.lat=lat;p.lng=lng;p.age=0;p.maxAge=55+Math.random()*50;p.speed=vec.speed;
+      return p;
+    }
+  }
+  if(!p)p={};
+  p.lat=minLat+Math.random()*(maxLat-minLat);
+  p.lng=minLng+Math.random()*(maxLng-minLng);
+  p.age=0;p.maxAge=40;p.speed=0;
+  return p;
+}
+
+function radarWindEnsureParticles(){
+  if(!mapObj)return;
+  var size=mapObj.getSize();
+  var boost=mapObj.getBounds().intersects(L.latLngBounds(
+    [RADAR_WIND_PL.minLat,RADAR_WIND_PL.minLon],[RADAR_WIND_PL.maxLat,RADAR_WIND_PL.maxLon]))?1.25:1;
+  var count=Math.round(Math.max(260,Math.min(980,(size.x*size.y)/2600))*boost);
+  if(radarWindState.forceRespawn||radarWindState.particles.length!==count){
+    radarWindState.particles.length=0;
+    for(var i=0;i<count;i++)radarWindState.particles.push(radarWindSpawnParticleGeo());
+    radarWindState.forceRespawn=false;
+  }
+}
+
+function radarWindFrame(ts){
+  if(!radarWindState.enabled||!layers.wind.on){radarWindState.raf=0;return;}
+  if(!radarWindState.ready){radarWindState.raf=requestAnimationFrame(radarWindFrame);return;}
+  if(!radarWindState.ctx||!mapObj||!radarWindEnsureCanvas()){radarWindState.raf=0;return;}
+  // Rebuild hour field if needed (no more screenField dependency)
+  var hourField=radarWindBuildHourField(radarWindState.selectedIndex);
+  if(!hourField){radarWindState.raf=requestAnimationFrame(radarWindFrame);return;}
+  radarWindEnsureParticles();
+  var dt=Math.min(2.2,Math.max(0.65,(ts-(radarWindState.lastFrameTs||ts))/16.6667));
+  radarWindState.lastFrameTs=ts;
+  var ctx=radarWindState.ctx;
+  var size=mapObj.getSize();
+  // Fade trails with destination-out — never paints opaque background over map
+  ctx.save();
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.globalCompositeOperation='destination-out';
+  ctx.fillStyle='rgba(0,0,0,0.15)';
+  ctx.fillRect(0,0,radarWindState.canvas.width,radarWindState.canvas.height);
+  ctx.globalCompositeOperation='source-over';
+  ctx.restore();
+  ctx.lineCap='round';
+  for(var i=0;i<radarWindState.particles.length;i++){
+    var p=radarWindState.particles[i];
+    if(p.age>p.maxAge){radarWindSpawnParticleGeo(p);continue;}
+    // Sample wind at current geo position
+    var vec=radarWindSampleLatLng(p.lat,p.lng,hourField);
+    if(!vec||vec.speed<1){radarWindSpawnParticleGeo(p);continue;}
+    // Project current geo pos to screen
+    var sp=mapObj.latLngToContainerPoint([p.lat,p.lng]);
+    if(sp.x<-10||sp.y<-10||sp.x>size.x+10||sp.y>size.y+10){
+      radarWindSpawnParticleGeo(p);continue;
+    }
+    // dtHours: simulation timescale per animation frame-unit (dt≈1 at 60fps)
+    // Tuned to match ~1-2px/frame motion at typical wind speeds and zoom levels
+    var dtHours=dt*0.074*0.315;
+    var dLat=(vec.v*dtHours)/111;
+    var cosLat=Math.cos(p.lat*Math.PI/180)||0.01;
+    var dLng=(vec.u*dtHours)/(111*cosLat);
+    var nlat=p.lat+dLat, nlng=p.lng+dLng;
+    // Check new pos is still in bounds
+    if(!radarWindInBounds(nlat,nlng,RADAR_WIND_EU)){radarWindSpawnParticleGeo(p);continue;}
+    var sp2=mapObj.latLngToContainerPoint([nlat,nlng]);
+    // Draw segment from old to new screen pos
+    ctx.strokeStyle=radarWindColor(vec.speed);
+    ctx.lineWidth=vec.speed>=55?1.5:(vec.speed>=30?1.2:0.95);
+    ctx.beginPath();ctx.moveTo(sp.x,sp.y);ctx.lineTo(sp2.x,sp2.y);ctx.stroke();
+    p.lat=nlat;p.lng=nlng;p.age+=dt;
+  }
+  radarWindState.raf=requestAnimationFrame(radarWindFrame);
+}
+function radarWindStartAnim(){
+  if(!radarWindState.enabled||radarWindState.raf)return;
+  radarWindState.raf=requestAnimationFrame(radarWindFrame);
+}
+function radarWindStopAnim(){
+  if(radarWindState.raf)cancelAnimationFrame(radarWindState.raf);
+  radarWindState.raf=0;
+  radarWindState.lastFrameTs=0;
+  radarWindClearCanvas();
+}
+function radarWindApplyData(points,timestamps,currentStamp){
+  radarWindState.gridPoints=points;
+  radarWindState.timestamps=timestamps;
+  radarWindState.updateTime=currentStamp;
+  radarWindState.fieldCache={};
+  radarWindState.ready=!!timestamps.length&&!!points.length;
+  var nowIdx=0,best=Infinity;
+  for(var i=0;i<timestamps.length;i++){
+    var diff=Math.abs(timestamps[i]-currentStamp);
+    if(diff<best){best=diff;nowIdx=i;}
+  }
+  radarWindState.centerSlot=nowIdx;
+  radarWindState.selectedIndex=nowIdx;
+  radarWindState.selectedOffset=0;
+  radarWindState.needsFieldRefresh=true;
+  radarWindState.forceRespawn=true;
+  radarWindUpdateLabels();
+}
+function refreshRadarWind(force){
+  if(!layers.wind.on&&!force)return;
+  if(radarWindState.loading)return;
+  if(radarWindState.cooldownUntil&&Date.now()<radarWindState.cooldownUntil){
+    if(radarWindApplyCache(radarWindLoadCache(),24*60*60*1000))return;
+    radarWindSetStatus("Open-Meteo jest w cooldown po limicie. Kolejna proba po "+radarWindFmtDate(radarWindState.cooldownUntil,false)+".","err");
+    return;
+  }
+  if(!force&&radarWindState.ready&&(Date.now()-radarWindState.lastLoadedAt)<RADAR_WIND_CACHE_MS){
+    radarWindSetStatus("Siatka Open-Meteo aktualna. Animacja odswiezona.","ok");
+    radarWindState.needsFieldRefresh=true;
+    radarWindState.forceRespawn=true;
+    radarWindStartAnim();
+    return;
+  }
+  if(!force&&radarWindApplyCache(radarWindLoadCache(),RADAR_WIND_CACHE_MS))return;
+  radarWindState.loading=true;
+  radarWindSetStatus("Pobieranie siatki wiatru dla Europy i gestszej siatki nad Polska...","");
+  var points=radarWindBuildPoints();
+  var requests=[];
+  for(var start=0;start<points.length;start+=RADAR_WIND_BATCH_SIZE){
+    (function(chunk){
+      var lats=chunk.map(function(p){return p.lat;}).join(",");
+      var lons=chunk.map(function(p){return p.lon;}).join(",");
+      var url="https://api.open-meteo.com/v1/forecast?latitude="+lats
+        +"&longitude="+lons
+        +"&hourly=wind_speed_10m,wind_direction_10m"
+        +"&past_hours="+RADAR_WIND_HISTORY_H
+        +"&forecast_hours="+RADAR_WIND_FORECAST_H
+        +"&wind_speed_unit=kmh&timezone=UTC";
+      requests.push(fetch(url).then(function(r){
+        return r.json().then(function(d){
+          if(!r.ok){
+            var msg=(d&&d.reason)?d.reason:("HTTP "+r.status);
+            var err=new Error(msg);
+            err.status=r.status;
+            throw err;
+          }
+          return Array.isArray(d)?d:[d];
+        });
+      }).then(function(rows){
+        return rows.map(function(row,idx){return {req:chunk[idx],row:row};});
+      }));
+    })(points.slice(start,start+RADAR_WIND_BATCH_SIZE));
+  }
+  Promise.all(requests).then(function(chunks){
+    var merged=[],masterTimes=[],currentStamp=radarWindHourNow();
+    chunks.forEach(function(chunk){
+      chunk.forEach(function(entry){
+        var row=entry.row||{},h=row.hourly||{};
+        if(!masterTimes.length&&h.time&&h.time.length)masterTimes=h.time.slice();
+        merged.push({
+          lat:row.latitude!=null?row.latitude:entry.req.lat,
+          lon:row.longitude!=null?row.longitude:entry.req.lon,
+          speeds:(h.wind_speed_10m||[]).map(function(v){return v==null?null:+v;}),
+          dirs:(h.wind_direction_10m||[]).map(function(v){return v==null?null:+v;})
+        });
+      });
+    });
+    var ts=masterTimes.map(radarWindParseUtc).filter(function(v){return !isNaN(v);});
+    if(!ts.length||!merged.length)throw new Error("Brak danych godzinowych dla siatki wiatru");
+    var nowIdx=0,best=Infinity;
+    for(var i=0;i<ts.length;i++){
+      var diff=Math.abs(ts[i]-currentStamp);
+      if(diff<best){best=diff;nowIdx=i;}
+    }
+    var from=Math.max(0,nowIdx-RADAR_WIND_HISTORY_H),to=Math.min(ts.length-1,nowIdx+RADAR_WIND_FORECAST_H);
+    var trimmedTs=ts.slice(from,to+1);
+    merged=merged.map(function(pt){
+      return {lat:pt.lat,lon:pt.lon,speeds:pt.speeds.slice(from,to+1),dirs:pt.dirs.slice(from,to+1)};
+    });
+    radarWindApplyData(merged,trimmedTs,currentStamp);
+    radarWindState.lastLoadedAt=Date.now();
+    radarWindState.cooldownUntil=0;
+    radarWindState.error="";
+    radarWindSaveCache();
+    radarWindSetStatus("Siatka gotowa. Widok ograniczony do Europy, z gestsza proba nad Polska.","ok");
+    radarWindStartAnim();
+  }).catch(function(err){
+    radarWindState.error=err&&err.message?err.message:String(err);
+    if(err&&(+err.status===429||/limit|too many|exceed|quota/i.test(radarWindState.error))){
+      radarWindState.cooldownUntil=Date.now()+RADAR_WIND_COOLDOWN_MS;
+    }
+    if(radarWindApplyCache(radarWindLoadCache(),24*60*60*1000)){
+      radarWindSetStatus("Open-Meteo zwrocil limit. Uzyto cache; nowa proba po cooldownie.","err");
+      return;
+    }
+    radarWindSetStatus("Blad Open-Meteo: "+radarWindState.error,"err");
+  }).finally(function(){
+    radarWindState.loading=false;
+  });
+}
+function toggleRadarWindLayer(on){
+  radarWindState.enabled=!!on;
+  radarWindUpdatePanel();
+  radarWindTogglePlayback(true);
+  if(!on){
+    radarWindStopAnim();
+    return;
+  }
+  if(!mapObj)return;
+  radarWindBindMapEvents();
+  radarWindResizeCanvas();
+  refreshRadarWind(false);
+  radarWindStartAnim();
+}
+
 // Zegar UTC
 setInterval(function(){var n=new Date();document.getElementById("clk").textContent=pd(n.getUTCHours())+":"+pd(n.getUTCMinutes())+":"+pd(n.getUTCSeconds())+" UTC";},1000);
 
@@ -1318,13 +1962,22 @@ function showSec(el,s){
     },100);
   }
   if(s==='ostrzezenia'){syncAlertPanel();if(!alertsLoaded)loadAlerts();if(burzeLoaded&&typeof generateAIAlert==='function'){setTimeout(generateAIAlert,300);}else{var _elAI=document.getElementById('ai-alert-content');if(_elAI)_elAI.textContent='Oczekiwanie na dane modelu... Komunikat pojawi sie automatycznie.';} }
-  if(s==='wiatr')initWiatr();
+  if(s==='wiatr'){
+    initWiatr();
+    setTimeout(function(){if(mapWiatr)mapWiatr.invalidateSize();},120);
+  }
   if(s==='aktualnosci'){syncNewsPanel();loadNews();}
   if(s==='eumetsat'){
     if(!eumInit)initEumetsat();
     else setTimeout(function(){if(eumMap)eumMap.invalidateSize();},150);
   }
-  if(s==='radar'&&mapObj)setTimeout(function(){mapObj.invalidateSize();},100);
+  if(s==='radar'&&mapObj)setTimeout(function(){
+    mapObj.invalidateSize();
+    if(radarWindState.enabled){
+      radarWindResizeCanvas();
+      radarWindStartAnim();
+    }
+  },100);
 }
 var mapSat=null,mapWiatr=null;
 var satLyrSat=null,chartTemp=null,chartRain=null,chartWindChart=null;
@@ -1848,20 +2501,47 @@ function syncAlertPanel(){
 
 // ── WIATR ──────────────────────────────────
 var wiatrInit=false,windLyrsActive={wind:true,pres:false};
+function refreshWiatrMapLayout(){
+  setTimeout(function(){
+    if(!mapWiatr)return;
+    mapWiatr.invalidateSize();
+    mapWiatr.setView(mapWiatr.getCenter(),mapWiatr.getZoom(),{animate:false});
+  },140);
+  setTimeout(function(){
+    if(!mapWiatr)return;
+    mapWiatr.invalidateSize();
+  },420);
+}
 function initWiatr(){
-  if(wiatrInit)return;wiatrInit=true;
+  wiatrInit=true;
   var ctr=mapObj?mapObj.getCenter():{lat:52,lng:20};
-  mapWiatr=L.map('map-wiatr',{zoomControl:false,attributionControl:false,doubleClickZoom:false}).setView([ctr.lat,ctr.lng],5);
-  L.control.zoom({position:'topright'}).addTo(mapWiatr);
-  setWindBase('dark');
+  var zoom=(mapObj&&typeof mapObj.getZoom==='function')?mapObj.getZoom():5;
+  if(mapWiatr){
+    mapWiatr.off();
+    mapWiatr.remove();
+    mapWiatr=null;
+  }
+  windLayerMap={wind:null,pres:null};
+  windBaseLyr=null;
+  var host=document.getElementById('map-wiatr');
+  if(!host)return;
+  var freshHost=host.cloneNode(false);
+  host.parentNode.replaceChild(freshHost,host);
+  requestAnimationFrame(function(){
+    requestAnimationFrame(function(){
+      mapWiatr=L.map(freshHost,{zoomControl:false,attributionControl:false,doubleClickZoom:false}).setView([ctr.lat,ctr.lng],zoom);
+      L.control.zoom({position:'topright'}).addTo(mapWiatr);
+      setWindBase('dark');
   // Warstwa wiatru domyślnie włączona
-  var wlyr=L.tileLayer('https://tile.openweathermap.org/map/wind_new/{z}/{x}/{y}.png?appid='+OWM_KEY,
-    {opacity:1.0,maxNativeZoom:12,maxZoom:12,zIndex:3,tileSize:256});
-  wlyr.addTo(mapWiatr);
-  windLayerMap.wind=wlyr;
-  setTimeout(function(){mapWiatr.invalidateSize();},200);
+      var wlyr=L.tileLayer('https://tile.openweathermap.org/map/wind_new/{z}/{x}/{y}.png?appid='+OWM_KEY,
+        {opacity:1.0,maxNativeZoom:12,maxZoom:12,zIndex:3,tileSize:256});
+      wlyr.addTo(mapWiatr);
+      windLayerMap.wind=wlyr;
+      refreshWiatrMapLayout();
   // Synchronizuj dane wiatru
-  syncWiatrPanel();
+      syncWiatrPanel();
+    });
+  });
 }
 
 function setWindBase(name){
@@ -2014,11 +2694,21 @@ function initMap(lt,ln){
   loadRVandSat();
   setupMapClick();
   mapObj.on("moveend zoomend",updateViewCounter);
+  radarWindBindMapEvents();
+  radarWindUpdatePanel();
 }
 
 function rc(){if(mapObj&&uLat)mapObj.setView([uLat,uLon],8);}
 
-window.addEventListener("resize",function(){if(mapObj)setTimeout(function(){mapObj.invalidateSize();},100);});
+window.addEventListener("resize",function(){
+  if(mapObj)setTimeout(function(){
+    mapObj.invalidateSize();
+    if(radarWindState.enabled){
+      radarWindResizeCanvas();
+      radarWindStartAnim();
+    }
+  },100);
+});
 
 function setBase(name){
   ['street','dark','night','sat'].forEach(function(b){
@@ -2107,6 +2797,10 @@ function toggleLayer(key){
     if(satLyr){if(layers.sat.on)satLyr.addTo(mapObj);else mapObj.removeLayer(satLyr);}
   } else if(key==='radar'){
     if(rvLyr){if(layers.radar.on)rvLyr.addTo(mapObj);else mapObj.removeLayer(rvLyr);}
+  } else if(key==='wind'){
+    if(layers[key].lyr&&mapObj.hasLayer(layers[key].lyr))mapObj.removeLayer(layers[key].lyr);
+    layers[key].lyr=null;
+    toggleRadarWindLayer(layers.wind.on);
   } else {
     // OWM layers
     if(layers[key].lyr)mapObj.removeLayer(layers[key].lyr);
@@ -4325,4 +5019,3 @@ window.onload=function(){startGPS();};
 </script>
 </body>
 </html>
-
