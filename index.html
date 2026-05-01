@@ -12,7 +12,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>LaserProfit.eu – Free Laser Engraving Price Calculator 2026</title>
-<meta name="description" content="LaserProfit.eu – Darmowy kalkulator wyceny cięcia i grawerowania laserem. 14 języków, 12 walut. Kalkulator wyceny grawerowania laserem 2026.">
+<meta name="description" content="LaserProfit.eu – Free laser engraving & cutting price calculator. 14 languages, 12 currencies. Kalkulator wyceny grawerowania laserem 2026.">
 <meta name="keywords" content="laser engraving price calculator, laser cutting cost calculator, kalkulator grawerowania, Lasergravur Preisrechner, calculadora grabado laser">
 <meta name="author" content="LaserProfit.eu">
 <meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large">
@@ -27,7 +27,7 @@
 <meta name="theme-color" content="#ff6b2b">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://laserprofit.eu">
-<meta property="og:title" content="LaserProfit.eu – Darmowy kalkulator wyceny grawerowania laserowego 2026">
+<meta property="og:title" content="LaserProfit.eu – Free Laser Engraving Price Calculator 2026">
 <meta property="og:description" content="Dokładne wyceny cięcia i grawerowania laserem. Wsparcie dla 12 walut i 14 języków. xTool, Creality, Atomstack.">
 <meta property="og:site_name" content="LaserProfit.eu">
 <meta property="og:image" content="https://laserprofit.eu/polski.png">
@@ -298,6 +298,17 @@ footer{text-align:center;margin-top:65px;padding:32px;color:var(--muted);border-
 </div>
 </nav>
 <div class="container">
+
+<!-- ── BAZA PROBLEMÓW – pasek wyszukiwania ── -->
+<div style="background:rgba(255,107,43,.06);border:1.5px solid rgba(255,107,43,.25);border-radius:12px;padding:10px 16px;margin:14px 0 0;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+    <span style="font-size:.75rem;font-weight:700;color:var(--orange);white-space:nowrap;">🔍 Masz problem z grawerowaniem lub cięciem na laserze?</span>
+    <input type="text" id="problemSearch" placeholder="Wpisz problem np. burn marks, sklejka, fokus..." onkeydown="if(event.key==='Enter')goToProblems()"
+        style="flex:1;min-width:180px;padding:7px 12px;border-radius:7px;border:1px solid var(--border);background:var(--input-bg,#0a1624);color:var(--text);font-size:.78rem;font-family:var(--font);outline:none;">
+    <button onclick="goToProblems()"
+        style="background:var(--orange);color:#fff;border:none;border-radius:7px;padding:7px 16px;font-size:.75rem;font-weight:700;cursor:pointer;font-family:var(--font);white-space:nowrap;">Sprawdź rozwiązanie →</button>
+    <a href="https://laserprofit.eu/laser-problems/" target="_blank" style="font-size:.65rem;color:var(--muted);text-decoration:none;white-space:nowrap;">Pełna baza problemów →</a>
+</div>
+
 <section class="hero">
     <div class="hero-left">
         <span class="hero-badge" data-t="hero_badge">DARMOWE NARZĘDZIE · 2026</span>
@@ -362,7 +373,7 @@ footer{text-align:center;margin-top:65px;padding:32px;color:var(--muted);border-
             <span style="font-size:.75rem;font-weight:700;color:var(--text);">📋 Release Notes – co nowego w kalkulatorze?</span>
         </div>
         <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
-            <span style="background:rgba(34,197,94,.15);color:#22c55e;font-size:.6rem;font-weight:700;padding:2px 7px;border-radius:8px;">1 nowa funkcja</span>
+            <span style="background:rgba(34,197,94,.15);color:#22c55e;font-size:.6rem;font-weight:700;padding:2px 7px;border-radius:8px;">2 nowe funkcje</span>
             <span id="changelogArrow" style="color:var(--orange);font-size:.9rem;transition:.2s;">▼</span>
         </div>
     </div>
@@ -379,6 +390,10 @@ footer{text-align:center;margin-top:65px;padding:32px;color:var(--muted);border-
                 <div style="display:flex;gap:8px;align-items:flex-start;">
                     <span style="background:rgba(34,197,94,.15);color:#22c55e;font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:6px;white-space:nowrap;margin-top:1px;">NOWE</span>
                     <span style="font-size:.72rem;color:var(--text);line-height:1.5;">🏆 <b>Porównywarka laserów diodowych 2026</b> – zestawienie i porównanie najlepszych modeli xTool, Creality, Atomstack, Sculpfun wg mocy, ceny i zastosowania. <a href="https://laserprofit.eu/compare/" style="color:var(--orange);">Sprawdź porównywarkę →</a></span>
+                </div>
+                <div style="display:flex;gap:8px;align-items:flex-start;">
+                    <span style="background:rgba(34,197,94,.15);color:#22c55e;font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:6px;white-space:nowrap;margin-top:1px;">NOWE</span>
+                    <span style="font-size:.72rem;color:var(--text);line-height:1.5;">🔍 <b>Baza Problemów i Rozwiązań</b> – 72 prawdziwe problemy z laserami diodowymi i fiber z forów PL i EN. Wyszukiwarka pod nawigacją. <a href="https://laserprofit.eu/laser-problems/" style="color:var(--orange);">Przejdź do bazy →</a></span>
                 </div>
             </div>
         </div>
@@ -1428,6 +1443,14 @@ function calculate(){
 // ============================================================
 // ZAPISZ TXT
 // ============================================================
+/* ── BAZA PROBLEMÓW ── */
+function goToProblems(){
+    var q=document.getElementById('problemSearch').value.trim();
+    var url='https://laserprofit.eu/laser-problems/';
+    if(q) url+='?q='+encodeURIComponent(q);
+    window.open(url,'_blank');
+}
+
 /* ── CHANGELOG ── */
 function toggleChangelog(){
     var body=document.getElementById('changelogBody');
