@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<title>Baza Problemów Laserowych – LaserProfit.eu</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#f1f5f9;color:#1e293b;font-size:13px}
+header{background:#0d1b2e;color:#fff;padding:16px 24px}
+header h1{font-size:1.1rem;color:#ff6b2b}
+header p{font-size:.75rem;color:#7a91b0;margin-top:2px}
+.toolbar{background:#fff;padding:12px 24px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;border-bottom:2px solid #e2e8f0;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.toolbar input{flex:1;min-width:220px;padding:8px 12px;border:1.5px solid #cbd5e1;border-radius:7px;font-size:.82rem;outline:none}
+.toolbar input:focus{border-color:#ff6b2b}
+.toolbar select{padding:8px 10px;border:1.5px solid #cbd5e1;border-radius:7px;font-size:.78rem;background:#fff;cursor:pointer}
+.stats{margin-left:auto;font-size:.72rem;color:#64748b;white-space:nowrap}
+table{width:100%;border-collapse:collapse}
+thead tr{background:#1e293b;color:#fff;position:sticky;top:53px;z-index:9}
+thead th{padding:9px 10px;text-align:left;font-size:.7rem;font-weight:700;letter-spacing:.5px;white-space:nowrap}
+tbody tr{border-bottom:1px solid #e2e8f0;transition:.1s}
+tbody tr:hover{background:#f8fafc}
+tbody tr.hidden{display:none}
+td{padding:8px 10px;vertical-align:top;font-size:.78rem;line-height:1.5}
+.cat{display:inline-block;padding:2px 9px;border-radius:10px;font-size:.62rem;font-weight:700;white-space:nowrap}
+.cat-M{background:#dbeafe;color:#1d4ed8}
+.cat-O{background:#ede9fe;color:#6d28d9}
+.cat-J{background:#d1fae5;color:#065f46}
+.cat-C{background:#fef3c7;color:#92400e}
+.cat-S{background:#fce7f3;color:#9d174d}
+.cat-Mat{background:#ffedd5;color:#c2410c}
+.cat-T{background:#fee2e2;color:#991b1b}
+.cat-B{background:#fef9c3;color:#854d0e}
+.cat-F{background:#e0f2fe;color:#0369a1}
+.cat-D{background:#dcfce7;color:#15803d}
+.lvl{display:inline-block;padding:2px 8px;border-radius:8px;font-size:.62rem;font-weight:700}
+.lvl-easy{background:#d1fae5;color:#065f46}
+.lvl-med{background:#fef3c7;color:#92400e}
+.lvl-hard{background:#fee2e2;color:#991b1b}
+.lvl-imp{background:#ede9fe;color:#6d28d9}
+.tags span{display:inline-block;background:#f1f5f9;color:#475569;padding:1px 5px;border-radius:4px;font-size:.59rem;margin:1px;border:1px solid #e2e8f0}
+.no-results{text-align:center;padding:40px;color:#94a3b8;font-size:.9rem}
+.num{color:#94a3b8;font-size:.7rem;font-weight:700}
+strong.title{color:#1e293b;font-size:.8rem}
+</style>
+</head>
+<body>
+<header>
+  <h1>⚡ Baza Problemów Laserowych – LaserProfit.eu</h1>
+  <p id="headerStats">Ładowanie...</p>
+</header>
+<div class="toolbar">
+  <input type="text" id="search" placeholder="🔍 Wpisz problem, symptom, słowo kluczowe..." oninput="filter()">
+  <select id="catFilter" onchange="filter()">
+    <option value="">Wszystkie kategorie</option>
+    <option>Mechaniczne</option>
+    <option>Optyka/Wiązka</option>
+    <option>Jakość graweru</option>
+    <option>Cięcie</option>
+    <option>Oprogramowanie</option>
+    <option>Materiały</option>
+    <option>Termiczne</option>
+    <option>BHP</option>
+        <option>Laser Diodowy</option>
+  </select>
+  <select id="lvlFilter" onchange="filter()">
+    <option value="">Wszystkie poziomy</option>
+    <option>Łatwy</option>
+    <option>Średni</option>
+    <option>Trudny</option>
+    <option>WAŻNY!</option>
+  </select>
+  <select id="typeFilter" onchange="filter()">
+    <option value="">Wszystkie lasery</option>
+    <option>Diodowy</option>
+    <option>Fiber</option>
+  </select>
+  <span class="stats" id="stats">–</span>
+</div>
+<table id="table">
+<thead>
+<tr>
+  <th>#</th>
+  <th>Kategoria</th>
+  <th>Problem</th>
+  <th>Symptomy</th>
+  <th>Przyczyny</th>
+  <th>Rozwiązanie</th>
+  <th>Tagi</th>
+  <th>Poziom</th>
+  <th>Laser</th>
+</tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
+<div class="no-results" id="noResults" style="display:none">😔 Nie znaleziono wyników. Spróbuj innych słów kluczowych.</div>
+
+<script>
+const catClass={
+  "Mechaniczne":"cat-M","Optyka/Wiązka":"cat-O","Jakość graweru":"cat-J",
+  "Cięcie":"cat-C","Oprogramowanie":"cat-S","Materiały":"cat-Mat",
+  "Termiczne":"cat-T","BHP":"cat-B","Laser Diodowy":"cat-D"
+};
+const lvlClass={"Łatwy":"lvl-easy","Średni":"lvl-med","Trudny":"lvl-hard","WAŻNY!":"lvl-imp"};
+
+// FORMAT: [id, kategoria, problem, symptomy, przyczyny, rozwiązanie, tagi, poziom, laser]
+const data=[
+// ── MECHANICZNE (Diodowy) ──
+[1,"Mechaniczne","Przeskakiwanie osi Y","Maszyna losowo skacze w osi Y; krzywy obraz","Luźny lub zabrudzony pasek zębaty; brudne zębatki; przegrzanie silnika","Napnij pasek; wyczyść zębatki i prowadnice; skalibruj $100/$101 w GRBL","oś Y,pasek,kroki,GRBL,zębatki","Łatwy","Diodowy"],
+[2,"Mechaniczne","Głowica jedzie w złe miejsce","Projekt ląduje w innym miejscu niż zaznaczono","Błędna pozycja HOME; zły origin w oprogramowaniu","Zresetuj home position; dostosuj obszar roboczy w LightBurn","home,origin,pozycja,LightBurn","Łatwy","Diodowy"],
+[3,"Mechaniczne","Hałas podczas pracy","Głośne skrzypienie lub stukanie podczas ruchu głowicy","Luźne śruby; brak smarowania prowadnic","Dokręć wszystkie śruby; smar silikonowy na prowadnice","hałas,smarowanie,prowadnice,śruby","Łatwy","Diodowy"],
+[4,"Mechaniczne","Luźne paski napędowe","Krzywe linie; przekrzywiony obraz; nierówne cięcie","Poluzowany pasek jednej lub obu osi","Napnij paski równomiernie; sprawdź każdą oś osobno","pasek,oś X,oś Y,krzywe,przekrzywiony","Łatwy","Diodowy"],
+// ── OPTYKA (Diodowy) ──
+[5,"Optyka/Wiązka","Brudna soczewka modułu diodowego","Słabe cięcie; rozmyte grawerowanie; okopcenia; mała moc","Osad dymu i kurzu na soczewce ochronnej lub fokusującej – częste przy cięciu drewna","Czyść regularnie płynem optycznym i bezpyłową ściereczką; sprawdź też szybkę ochronną","soczewka,optyka,moc,czyszczenie,szybka","Łatwy","Diodowy"],
+[6,"Optyka/Wiązka","Laser diodowy nie odpala – moduł nie strzela","Maszyna jedzie ale wiązka jest niewidoczna lub bardzo słaba","Luźny kabel zasilania modułu; przepalona dioda; wyłącznik bezpieczeństwa; brak sygnału PWM","Sprawdź kabel między płytą a modułem; sprawdź czy limitswitch nie jest wciśnięty; sprawdź ustawienia mocy >0% w LightBurn","brak wiązki,dioda,kabel,PWM,bezpieczeństwo","Średni","Diodowy"],
+[7,"Optyka/Wiązka","Fokus lasera diodowego – zły wynik","Rozmyte linie; brak ostrości; słabe cięcie","Zły fokus (za wysoko lub za nisko); nierówny materiał; fokus nie skalibrowany dla grubości","Użyj nóżki fokusującej lub mierz ogniskową na materialePrzetestuj ogniskową na czarnym kartonie","fokus,ogniskowa,ostrość,focus block","Łatwy","Diodowy"],
+[8,"Optyka/Wiązka","Grawerowanie nierówne po lewej i prawej stronie pola","Lewa część słabsza lub rozmyta; prawa część w porządku (lub odwrotnie)","Wiązka diodowa nie jest prostopadła do materiału; moduł krzywo zamontowany","Wypoziomuj moduł laserowy; sprawdź czy oś Z jest pionowa; sprawdź mocowanie modułu","poziomowanie,moduł,prostopadłość,nierówne","Średni","Diodowy"],
+// ── JAKOŚĆ GRAWERU (Diodowy) ──
+[9,"Jakość graweru","Burn marks – przypalenia na krawędziach","Czarne obwódki przy grawerowaniu; przypalony materiał wokół wzoru","Za wysoka moc; za mała prędkość; brak air assist; słaba wentylacja","Zmniejsz moc; zwiększ prędkość; włącz dmuchawę; użyj taśmy malarskiej na materiale","burn marks,przypalenie,moc,prędkość,air assist,taśma","Łatwy","Diodowy"],
+[10,"Jakość graweru","Okopcenia na drewnie i sklejce","Czarny osad na powierzchni; nieestetyczny wygląd produktu","Brudna soczewka; zły nadmuch; za wolna prędkość; słaby wyciąg; zła partia sklejki","Wyczyść optykę; włącz air assist; sprawdź wyciąg; przetestuj nową partię sklejki","kopcenie,osad,wyciąg,air assist,sklejka","Łatwy","Diodowy"],
+[11,"Jakość graweru","Grawerowanie zdjęć – efekt bez detali lub zbyt ciemny","Zdjęcie wychodzi zbyt ciemne, płaskie lub z artefaktami","Zła rozdzielczość; błędny tryb ditheringu; złe DPI; za wysoka moc dla trybu rasterowego","Użyj trybu Jarvis lub Stucki w LightBurn; DPI 254-508; przetestuj moc 15-35%; użyj trybu Grayscale","zdjęcie,foto,DPI,LightBurn,dithering,Jarvis,Stucki,moc","Trudny","Diodowy"],
+[12,"Jakość graweru","Pierwsze i ostatnie linie rasterowe ciemniejsze","Widoczne ciemne linie na początku i końcu wypełnienia rastrowego","Brak overscan; głowica zwalnia i przyspiesza przy krawędziach – laser strzela za długo","Włącz overscan w LightBurn (zakładka Device Settings); zwiększ wartość overscan do 2-3%","overscan,raster,ciemne linie,LightBurn,krawędzie","Średni","Diodowy"],
+[13,"Jakość graweru","Płomień przy cięciu sklejki","Ogień pojawia się podczas cięcia; czujnik płomienia zatrzymuje pracę","Zła partia sklejki (kleje syntetyczne); brak air assist; za niska prędkość","Włącz lub wzmocnij air assist; zwiększ prędkość; zmień partię sklejki; ustaw czujnik płomienia na LOW w XCS","płomień,ogień,czujnik,xTool,sklejka,air assist,XCS","Łatwy","Diodowy"],
+[14,"Jakość graweru","Laser diodowy pali przezroczysty akryl zamiast grawerować","Brak efektu grawerowania na przezroczystym lub niebieskim akrylu","Laser diodowy (450nm) nie jest absorbowany przez przezroczyste i niebieskie materiały","Nałóż ciemny lakier lub czarny papier na materiał; użyj akrylu kolorowego; lub zmień na CO2","akryl,przezroczysty,niebieski,450nm,absorpcja","Łatwy","Diodowy"],
+// ── CIĘCIE (Diodowy) ──
+[15,"Cięcie","Laser diodowy nie tnie sklejki do końca","Elementy trzymają się razem po cięciu; materiał niedocięty","Za niska moc; za duża prędkość; brudna soczewka; zły fokus; sęki w sklejce","Drugi przebieg; zmniejsz prędkość lub zwiększ moc; wyczyść soczewkę; testuj nową partię sklejki","nie tnie,niedocięcie,moc,prędkość,sklejka,przebieg","Łatwy","Diodowy"],
+[16,"Cięcie","Sklejka – miejscami tnie miejscami nie","Niejednolite cięcie; płomień w niektórych miejscach; losowe niedocięcia","Sęki, żywica, nierówna gęstość wewnątrz sklejki – widoczna z zewnątrz","Zmień partię sklejki; kup sklejkę laserową (laser-grade); testuj każdą nową partię osobno","sklejka,sęki,żywica,nierówne,niedocięcie,laser-grade","Średni","Diodowy"],
+[17,"Cięcie","Krzywe linie cięcia","Cięcie nie przebiega prostą linią; zygzaki lub odchylenia","Luźne paski napędowe; brudne prowadnice; za wysoka prędkość cięcia","Napnij paski; wyczyść prowadnice; zmniejsz prędkość cięcia","krzywe,zygzak,pasek,prowadnice,prędkość","Łatwy","Diodowy"],
+[18,"Cięcie","Laser nie tnie przezroczystych materiałów","Laser ślizga się po przezroczystym akrylu, szkle lub plastiku bez efektu","Laser 450nm nie absorbuje przezroczystych materiałów","Użyj kolorowego akrylu lub nałóż czarny lakier/papier; do przezroczystych materiałów lepszy CO2","przezroczysty,akryl,szkło,450nm,absorpcja,brak efektu","Łatwy","Diodowy"],
+// ── OPROGRAMOWANIE (Diodowy) ──
+[19,"Oprogramowanie","LightBurn – projekt w złym miejscu na materiale","Grawerowanie/cięcie w złym miejscu; przesunięte od centrum","Zły origin w Device Settings; błędny Start From / Job Origin; obszar roboczy nie pasuje do maszyny","Sprawdź Device Settings → Start From → Absolute Coords; ustaw Job Origin na środek lub lewy-górny róg","LightBurn,origin,pozycja,Device Settings,Job Origin,Absolute Coords","Łatwy","Diodowy"],
+[20,"Oprogramowanie","LightBurn – linie wektorowe grawerowane zamiast cięte","Linie które miały być cięciem są grawerowane jako fill","Za gruba linia lub opacity poniżej 100%; zła warstwa (Fill zamiast Line)","Ustaw grubość linii na 0.001mm; opacity 100%; w oknie Cuts/Layers wybierz tryb Line nie Fill","wektor,cięcie,Fill,Line,LightBurn,warstwa,opacity","Łatwy","Diodowy"],
+[21,"Oprogramowanie","Maszyna nic nie robi po kliknięciu Start","Po naciśnięciu Start maszyna zatrzymuje się natychmiast","Błędny tryb pracy; pusty plik; wyłączony laser w LightBurn (laser enable)","Sprawdź czy w LightBurn ikona lasera jest aktywna; sprawdź typ warstwy; sprawdź połączenie USB","start,brak reakcji,laser enable,LightBurn,USB","Łatwy","Diodowy"],
+[22,"Oprogramowanie","Problemy z połączeniem USB – maszyna niewidoczna","Maszyna nie pojawia się w LightBurn lub LaserGRBL","Zły sterownik CH340; zły port COM; za długi kabel USB (powyżej 2m); zakłócenia","Zainstaluj sterownik CH340; sprawdź port COM w Menedżerze urządzeń; użyj krótszego kabla USB","połączenie,COM,CH340,USB,sterownik,LightBurn,GRBL","Łatwy","Diodowy"],
+[23,"Oprogramowanie","Przekrzywiony obraz – skew","Każda linia zaczyna się nieco bardziej z boku; obraz pochylony","Poluzowany pasek jednej osi; błędne steps/mm w GRBL ($100 lub $101)","Napnij paski; skalibruj $100 i $101 w GRBL; sprawdź czy koła zębate są dobrze osadzone","skew,pochylony,krzywy,GRBL,steps,pasek,kalibracja","Średni","Diodowy"],
+// ── MATERIAŁY (Diodowy) ──
+[24,"Materiały","Drewno – nierówne grawerowanie różnych gatunków","Różna głębokość i kolor w tym samym projekcie; nierówny kontrast","Różna gęstość drewna; żywica; sęki; różna wilgotność między partiami","Testuj każdą nową partię materiału na odpadach; prowadź bazę sprawdzonych ustawień; suszone drewno daje lepsze wyniki","drewno,żywica,sęki,gęstość,wilgoć,gatunki","Łatwy","Diodowy"],
+[25,"Materiały","Sklejka budowlana vs laserowa – różnice","Wygląda OK ale problemy z cięciem; klejenie spala się; nierówne wyniki","Sklejka budowlana ma klej syntetyczny (MDF/melaminowy) który pali się i grzebie soczewkę","Kupuj sklejkę laserową (laser-grade, np. Baltic Birch BB); testuj każdą nową partię; unikaj sklejki budowlanej","sklejka,klej,jakość,laserowa,budowlana,Baltic Birch","Średni","Diodowy"],
+[26,"Materiały","Akryl cast vs ekstrudowany","Brak białego kontrastu; topienie krawędzi przy grawerowaniu","Użyto akrylu ekstrudowanego zamiast odlewanego (cast) – topni zamiast parować","Zawsze używaj cast acrylic do grawerowania – daje mleczno-biały kontrast; ekstrudowany topnieje","akryl,cast,ekstrudowany,kontrast,biały,krawędzie","Łatwy","Diodowy"],
+[27,"Materiały","Skóra – różne wyniki na różnych typach","Nierówny kolor; różna głębokość; zapach","Skóra naturalna vs syntetyczna vs ekoskóra zachowuje się inaczej; różna zawartość barwników","Zawsze testuj na odpadach tej samej skóry; skóra naturalna wymaga niższej mocy; wentylacja obowiązkowa","skóra,naturalna,syntetyczna,ekoskóra,barwnik,wentylacja","Średni","Diodowy"],
+[28,"Materiały","PVC – absolutny zakaz","Czarny dym; ostry zapach; korozja elementów; awaria maszyny","PVC wydziela chlor przy podgrzaniu – trujący dla człowieka i niszczący optykę i metalowe części","Nigdy nie grawerować/ciąć PVC. Zawsze sprawdzaj skład materiału; testuj metodą spalenia krawędzi","PVC,zakaz,chlor,trucizna,korozja,bezpieczeństwo","WAŻNY!","Diodowy"],
+// ── TERMICZNE (Diodowy) ──
+[29,"Termiczne","Moduł diodowy się przegrzewa – moc spada","Moc drastycznie spada po 20-30 minutach pracy; laser staje się słabszy","Praca na 90-100% mocy przez długi czas; zatkany wentylator modułu; wysoka temperatura otoczenia","Pracuj na max 60-70% mocy ciągłej; rób przerwy 10 min co godzinę; wyczyść wentylator modułu","przegrzanie,moc,wentylator,moduł,dioda,przerwy","Średni","Diodowy"],
+[30,"Termiczne","Zasilacz – niewystarczający prąd dla mocnego modułu","Laser odpala się słabo; prędkość pracy mniejsza niż deklarowana; zasilacz się nagrzewa","Laser 20W+ pobiera znacznie więcej prądu niż tańsze modele; za mały zasilacz","Kupuj zasilacz z min. 30% zapasem mocy; sprawdź specyfikację modułu; mierz prąd przy pełnej pracy","zasilacz,prąd,ampery,moc,20W,przepalony","Średni","Diodowy"],
+// ── BHP (Diodowy) ──
+[31,"BHP","Dymy i opary – brak wentylacji","Duszność; pieczenie oczu; bóle głowy podczas pracy","Brak lub niewystarczający system wentylacji; filtr przepełniony","Obowiązkowy wyciąg + filtr HEPA i węgiel aktywny; nigdy nie pracuj w zamkniętym pomieszczeniu bez wentylacji","dymy,opary,wentylacja,filtr,HEPA,zdrowie","WAŻNY!","Diodowy"],
+[32,"BHP","Okulary – zły dobór dla lasera diodowego","Ból oczu po pracy; mroczki; podrażnienie oczu","Okulary słoneczne lub bez właściwego OD dla 450nm – nie chronią przed laserem diodowym","Diodowy 450nm: okulary OD4+ lub OD5+ dla zakresu 400-500nm; nigdy nie używaj zwykłych okularów","okulary,wzrok,OD4,OD5,450nm,bezpieczeństwo","WAŻNY!","Diodowy"],
+[33,"BHP","Czujnik płomienia (xTool) – zbyt czuły","Praca zatrzymuje się losowo bez widocznego płomienia","Czujnik płomienia xTool ustawiony na HIGH – zbyt czuły; wykrywa normalne odbicie świetlne","Ustaw czujnik płomienia na LOW w oprogramowaniu XCS (Settings → Flame Sensor); dodaj air assist","czujnik płomienia,xTool,XCS,false alarm,HIGH,LOW","Łatwy","Diodowy"],
+[34,"BHP","Pożar podczas pracy – brak nadzoru","Ogień rozprzestrzenia się podczas lub po zakończeniu pracy","Materiał zapalił się; brak air assist; brak nadzoru","Nigdy nie zostawiaj lasera bez nadzoru; gaśnica CO2 lub proszkowa w pobliżu; air assist drastycznie redukuje ryzyko","pożar,ogień,gaśnica,nadzór,air assist","WAŻNY!","Diodowy"],
+// ════════════ FIBER LASER ════════════
+[35,"Oprogramowanie","Ezcad2 – problem z instalacją sterownika na Windows 11","Maszyna fiber niewidoczna w Ezcad2; błąd sterownika USB; kod błędu w Device Manager","Windows 11 instaluje domyślny sterownik USBLMCV2 który blokuje kartę BJJCZ","Odinstaluj USBLMCV2 w Device Manager (USB → USBLMCV2 → Uninstall + Delete driver); wyłącz i włącz laser; przeskanuj nowe urządzenia","Ezcad2,Windows 11,sterownik,USBLMCV2,BJJCZ,Device Manager","Łatwy","Fiber"],
+[36,"Oprogramowanie","Ezcad2 aktywacja – problem z licencją na nowym komputerze","Ezcad2 nie startuje lub pokazuje błąd licencji po przeniesieniu na inny komputer","Ezcad2 ma limit aktywacji powiązany z kartą BJJCZ; zmiana komputera = nowa aktywacja","Karta BJJCZ to dongle – podłącz kartę do nowego komputera; jeśli limit aktywacji wyczerpany skontaktuj się z producentem maszyny","Ezcad2,licencja,aktywacja,BJJCZ,dongle,komputer","Łatwy","Fiber"],
+[37,"Mechaniczne","Galvo graweruje w złym miejscu (erratic engraving)","Maszyna graweruje losowo w różnych miejscach pola; wzory są przesunięte lub zduplikowane","Luźne wtyczki na płycie kontrolnej lub przy głowicy scan; zła lutownica na płycie; uszkodzony kontroler","Odłącz i z powrotem włóż wszystkie wtyczki przy kontrolerze i przy scan head; sprawdź lutowanie na płycie; może być błąd kontrolera lub scan head","galvo,scan head,erratic,losowe,kontroler,wtyczki,lutowanie","Trudny","Fiber"],
+[38,"Optyka/Wiązka","Obraz wygiął się na krawędziach (pincushion/barrel)","Krawędzie obrazu są wygięte do środka lub na zewnątrz; prostokąty wyglądają jak beczki","Niezkalibrowana korekcja zniekształceń soczewki w Ezcad2; zły markcfg7","Skalibruj zniekształcenia w Ezcad2: F3 → kalibracja kwadrylatury i beczki; graweruj kwadrat 100mm i mierz","pincushion,barrel,dystorsja,F3,Ezcad2,kalibracja,markcfg7","Trudny","Fiber"],
+[39,"Optyka/Wiązka","Czerwona dioda wskazująca (red pointer) nie pokrywa się z grawerowaniem","Czerwona ramka nie odpowiada miejscu rzeczywistego grawerowania; przesunięcie 5-20mm","Niezkalibrowane przesunięcie czerwonej diody względem wiązki IR w Ezcad2","Skalibruj offset czerwonej diody w Ezcad2: F3 → Red Light Offset; graweruj krzyż i dopasuj czerwony punkt","czerwona dioda,red pointer,offset,F3,Ezcad2,kalibracja,przesunięcie","Średni","Fiber"],
+[40,"Jakość graweru","Grawerowanie częściowe; laser odpala tylko połowę wzoru","Dolna lub górna połowa wzoru graweruje się; reszta pusta","Błąd w pliku; zbyt duże pliki wektorowe dla Ezcad; limit pamięci kontrolera; błąd transferu","Podziel projekt na mniejsze części; uproszcz wektory; sprawdź logi błędów w Ezcad; zaktualizuj firmware","częściowe,połowa,plik,pamięć,kontroler,Ezcad,transfer","Średni","Fiber"],
+[41,"Jakość graweru","Annealing stali nierdzewnej – brak czarnego koloru","Annealing wychodzi brązowo-złotawo zamiast czarno; niestały kolor","Złe parametry (za duże line distance, za wysoka prędkość, za niska częstotliwość); nieodpowiedni gatunek stali","Stale anodowanie: mała prędkość (250-500mm/s), niska moc (35-55%), niska częstotliwość (30-50kHz), line distance 0.02-0.03mm; defokus +5-10mm","annealing,czarny,stal nierdzewna,stainless,prędkość,moc,częstotliwość,defokus,line distance","Trudny","Fiber"],
+[42,"Jakość graweru","MOPA – kolory na stali nierdzewnej zbyt słabe lub zmienne","Kolory nie są żywe; różne efekty przy tych samych ustawieniach; niestabilność","Zbyt gruba warstwa tlenku; różne gatunki stali dają różne kolory; nieczysta powierzchnia stali","Wypoleruj stal przed grawerowaniem; używaj MOPA z regulacją szerokości impulsu (ns); testuj kombinacje częstotliwości i ns systematycznie","MOPA,kolor,stainless,tytan,tlenek,szerokość impulsu,ns,częstotliwość","Trudny","Fiber"],
+[43,"Jakość graweru","Głębokie grawerowanie metalu zbyt wolne lub płytkie","Wymagana głębokość osiągana po zbyt wielu przejściach; powolny proces","Za niska moc lasera dla głębokiego grawerowania; za małe line distance; za wolna prędkość dla wieloprzejściowego","Użyj wyższej mocy (70-90%); zwiększ line distance do 0.05-0.08mm; co 30 przejść wyczyść proszek metalowy z grawerowania sprężonym powietrzem","głębokie,deep engrave,przejścia,proszek,czyszczenie,sprężone powietrze","Trudny","Fiber"],
+[44,"Materiały","Problem z grawerowaniem mosiądzu i miedzi","Bardzo słabe grawerowanie; brak kontrastu; refleks wiązki od materiału","Mosiądz i miedź bardzo mocno odbijają wiązkę 1064nm; potrzeba bardzo wysokiej mocy","Użyj bardzo wysokiej mocy (80-100%); niskiej prędkości; wysokiej częstotliwości; lub użyj pasty grawerskiej do miedzi; MOPA daje lepsze wyniki na mosiądzu","mosiądz,miedź,odbicie,refleks,moc,MOPA,1064nm","Trudny","Fiber"],
+[45,"Oprogramowanie","LightBurn z fiber: nie można ustawić niskiej częstotliwości","Po przejściu z Ezcad2 na LightBurn minimalna częstotliwość jest zbyt wysoka","Nie zaimportowano pliku markcfg7 z Ezcad2; LightBurn potrzebuje tego pliku do konfiguracji karty BJJCZ","Skopiuj plik markcfg7 z folderu Ezcad2 do LightBurn; w LightBurn: Edit → Device Settings → import markcfg7","LightBurn,Ezcad2,markcfg7,BJJCZ,częstotliwość,kHz,import","Łatwy","Fiber"],
+[46,"Materiały","Raycus vs JPT vs MOPA: słabe wyniki na niektórych materiałach","Laser nie daje oczekiwanych efektów na plastikach lub tytanie; brak kolorów","Raycus i MAX mają stałą szerokość impulsu i ograniczony zakres kHz (20-80kHz); MOPA ma 1-4000kHz","Raycus/MAX: dobre do głębokiego grawerowania metali; JPT MOPA: do kolorów na stali, tytanie, plastikach; do materiałów wymagających szerokiego zakresu kHz konieczny MOPA","Raycus,JPT,MOPA,kHz,impulsy,materiały,kolory,tytan,plastik","Średni","Fiber"],
+[47,"Materiały","Grawerowanie aluminium: zbyt jasny lub niewidoczny wynik","Grawerowanie aluminium jest blade lub niewidoczne; brak kontrastu","Aluminium surowe trudne do grawerowania; za niska moc lub złe ustawienia; anodowane vs surowe","Aluminium anodowane: niska moc, wysoka prędkość; aluminium surowe: wysoka moc, przejście z pasta lub spray; najlepszy efekt: aluminium anodowane kolorowe","aluminium,anodowane,surowe,kontrast,moc,pasta,spray","Średni","Fiber"],
+[48,"Termiczne","Przegrzanie źródła laserowego Raycus/JPT","Laser wyłącza się po kilkudziesięciu minutach pracy; alarm temperaturowy","Praca na 100% mocy przez długi czas; temperatura otoczenia powyżej 35°C; zatkany filtr powietrza","Pracuj na max 70-75% mocy; utrzymuj temperaturę pomieszczenia poniżej 30°C; wyczyść filtr wentylacyjny co miesiąc","przegrzanie,Raycus,JPT,alarm,temperatura,100%,filtr","Średni","Fiber"],
+[49,"Materiały","Praca na drewnie: złe wyniki lub brak efektu (fiber)","Drewno się pali bez grawerowania lub efekt jest niejednolity i brzydki","Fiber 1064nm nie jest optymalny dla drewna (najlepszy CO2 lub diodowy); za wysokie energie powodują spalanie","Użyj bardzo niskiej mocy i wysokiej prędkości; galvo CO2 lub laser diodowy daje lepsze wyniki na drewnie; fiber na drewnie daje efekty tylko w specyficznych zastosowaniach","drewno,fiber,1064nm,spalanie,galvo CO2,diodowy","Średni","Fiber"],
+[50,"Materiały","Problem z grawerowaniem tworzyw sztucznych ABS/PC","Plastik się topi zamiast grawerować; żółknie; deformuje się","Za wysoka moc lub za mała prędkość; zły typ lasera dla tworzywa; brak MOPA","Dla ABS/PC używaj MOPA z krótkim impulsem (10-50ns); wysoka częstotliwość (200-400kHz); mała moc (10-20%); przetestuj na odpadach","plastik,ABS,PC,MOPA,impuls,ns,częstotliwość,topnienie","Trudny","Fiber"],
+,
+[51,"Oprogramowanie","Ezcad – komunikat 'laser nie gotowy' przy starcie","Po kliknięciu Mark pojawia się błąd 'laser not ready'; czerwony wskaźnik działa ale laser nie strzela","Nie wybrano obiektu do znakowania; parametry portów ustawione na NULL; karta BJJCZ nie wykryta","Sprawdź czy w obszarze roboczym masz zaznaczony obiekt do znakowania; NULL w portach to normalne – wybierz obiekt i kliknij Mark; sprawdź czy karta jest widoczna w Device Manager","Ezcad,laser not ready,NULL,BJJCZ,port,gotowy","Łatwy","Fiber"],
+[52,"Jakość graweru","Fiber – różne efekty dla linii pionowych i poziomych","Linie pionowe wyglądają inaczej niż poziome; nierówny grawer w tekście mimo dobrych ustawień na kwadracie testowym","Kąt hatchingu wpływa na wygląd pionowych i poziomych linii; galvo ma różną charakterystykę dla osi X i Y","Użyj hatchingu pod kątem 45° zamiast 0° lub 90°; przetestuj bi-directional hatching; dodaj drugi przebieg pod prostopadłym kątem; w Ezcad ustaw Auto Rotate","hatching,kąt,pionowe,poziome,linie,tekst,Ezcad,bi-directional,Auto Rotate","Średni","Fiber"],
+[53,"Jakość graweru","Fiber – parametry które działają na kwadracie testowym nie działają w projekcie","Na małym kwadracie 5x5mm wychodzi piękny czarny grawer; na tabliczce z tekstem efekt jest słaby","Mała powierzchnia testowa a duża produkcyjna mają różną akumulację ciepła; tekst ma cienkie linie inaczej reagujące niż fill","Dostosuj ustawienia osobno dla tekstu i dla wypełnień; zmniejsz moc dla tekstu o 10-20%; zwiększ częstotliwość; przetestuj na identycznym formacie jak produkcja","parametry,test,tabliczka,tekst,moc,kwadrat,fill,akumulacja ciepła","Średni","Fiber"],
+[54,"Jakość graweru","Laser diodowy – za duża moc na początku każdej linii grawerowania","Na początku każdej linii jest ciemna plama lub wypalenie; reszta linii graweruje się normalnie","Głowica przyspiesza na początku ruchu – laser strzela pełną mocą zanim głowica osiągnie właściwą prędkość; brak ustawień overscan","Włącz overscan w LightBurn (Device Settings → Overscan); wartość 2-3%; alternatywnie zwiększ Acceleration w ustawieniach osi GRBL ($120/$121)","overscan,acceleration,plama,moc,LightBurn,GRBL,linia","Średni","Diodowy"],
+[55,"Oprogramowanie","Ezcad – otwiera tylko jeden plik jednocześnie","Nie można mieć dwóch projektów otwartych w Ezcad2; praca z wieloma plikami jest utrudniona","Ezcad2 to jednodokumentowy program – ograniczenie architektoniczne","Używaj copy/paste między projektami; zapisuj szablony jako pliki .ezd i wczytuj je przez File → Open; lub przejdź na LightBurn który obsługuje wiele zakładek","Ezcad,plik,jeden,limit,LightBurn,zakładki","Łatwy","Fiber"],
+[56,"Materiały","Fiber – znakowanie długopisów i przedmiotów cylindrycznych","Znakowanie na długopisie wychodzi zniekształcone; tekst się rozciąga lub zwęża","Płaska soczewka f-theta znakuje płaskie powierzchnie; cylinder powoduje zniekształcenia geometryczne","Użyj przystawki obrotowej (rotary); w Ezcad włącz tryb Cylinder Correction; soczewka 300mm daje mniejsze zniekształcenia na dużych średnicach niż 110mm","długopis,cylinder,rotary,obrotnica,zniekształcenie,soczewka,Cylinder Correction","Średni","Fiber"],
+[57,"Oprogramowanie","LaserGRBL vs LightBurn – różnice dla początkujących","LaserGRBL daje słabsze wyniki niż LightBurn; zdjęcia wychodzą gorzej; brak funkcji zaawansowanych","LaserGRBL to darmowe narzędzie z ograniczonymi opcjami ditheringu i zarządzania warstwami","LightBurn (ok. 60 USD) oferuje tryby Jarvis/Stucki/Newsprint dla zdjęć; zarządzanie warstwami; Material Library; Camera Alignment; warto kupić jeśli grawerujesz regularnie","LaserGRBL,LightBurn,dithering,zdjęcia,warstwy,płatny,darmowy","Łatwy","Diodowy"]
+,
+[58,"Jakość graweru","Zdjęcie na sklejce – za niska rozdzielczość źródłowa","Grawerowanie wychodzi rozmazane, pikselowane, bez detali","Zdjęcie pobrane z internetu ma tylko 72 DPI i zbyt mało pikseli; nie można tego naprawić powiększając","Używaj zdjęć min. 1500-2000 pikseli szerokości; zdjęcia ze smartfona są OK; nie powiększaj małych zdjęć – to nie poprawia jakości","zdjęcie,rozdzielczość,DPI,piksele,pikselowane,rozmyte,internet","Łatwy","Diodowy"],
+[59,"Jakość graweru","Zdjęcie na sklejce – zły tryb ditheringu","Grawerowanie wygląda mechanicznie; widoczna siatka lub paski; brak naturalności","Użyto trybu Ordered lub niewłaściwego algorytmu ditheringu dla drewna","Dla sklejki i drewna używaj Jarvis lub Stucki w LightBurn – dają nieuporządkowany naturalny raster; Ordered zostawiaj dla metalu i akrylu","dithering,Jarvis,Stucki,Ordered,raster,LightBurn,siatka,paski","Łatwy","Diodowy"],
+[60,"Jakość graweru","Zdjęcie na sklejce – za wysokie DPI powoduje nakładanie punktów","Grawerowanie jest zbyt ciemne i traci detale; cała jasna część zdjęcia wychodzi czarna","Za wysokie DPI (np. 600+) powoduje nakładanie punktów lasera; każdy punkt wypala sąsiedni","Dla sklejki używaj 300-400 DPI; wyższe DPI tylko przy bardzo jasnym drewnie i niskiej mocy; zmniejsz moc gdy zwiększasz DPI","DPI,nakładanie,punkty,za ciemne,detale,moc","Łatwy","Diodowy"],
+[61,"Jakość graweru","Zdjęcie na sklejce – słaby kontrast; wszystko wychodzi szaro","Grawerowanie jest jednolicie szare; brak czerni i bieli; nie widać detali","Nieprzetworzone zdjęcie o słabym kontraście; drewno nie daje wystarczającego kontrastu","Zwiększ kontrast i wyostrz zdjęcie przed grawerowaniem w Photoshopie, GIMP lub Imag-R; ustaw poziomy tak aby czernie były czarne a biele białe","kontrast,szare,detale,Photoshop,GIMP,Imag-R,poziomy","Łatwy","Diodowy"],
+[62,"Jakość graweru","Zdjęcie na sklejce – sklejka brzozowa daje niejednolite efekty","Różne części zdjęcia wyglądają inaczej; tam gdzie jest sęk lub żywica efekt jest inny","Sklejka brzozowa Baltic Birch ma nierówną gęstość i strukturę – nie jest optymalna do zdjęć","Do zdjęć lepiej używaj olchy, wiśni, mahoniu lub lipowego basswood; sklejka brzozowa nadaje się do grafik wektorowych","sklejka,brzozowa,Baltic Birch,sęk,żywica,olcha,wiśnia,basswood","Łatwy","Diodowy"],
+[63,"Jakość graweru","Zdjęcie na sklejce – grawerowanie wzdłuż słojów daje dodatkowe linie","Na gotowym grawerze widać dodatkowe linie równoległe do słojów drewna; efekt nieestetyczny","Grawerowanie wzdłuż słojów wzmacnia naturalne linie drewna i powoduje nierówności","Zawsze graweruj w poprzek słojów; obróć materiał o 90° jeśli trzeba; w LightBurn zmień kąt skanowania z 0° na 90°","słoje,linie,kierunek,poprzek,LightBurn,kąt skanowania","Łatwy","Diodowy"],
+[64,"Jakość graweru","Zdjęcie na sklejce – air assist niszczy detale fotograficzne","Przy włączonym air assist detale zdjęcia są rozmazane; sadza rozsypuje się na jasne obszary","Silny nadmuch powietrza podczas grawerowania rastrowego rozrzuca sadzę i pył na sąsiednie obszary","Wyłącz lub zmniejsz air assist przy grawerowaniu zdjęć; air assist zostawiaj włączony przy cięciu; po grawerowaniu wyczyść alkoholem izopropylowym","air assist,nadmuch,sadza,pył,detale,zdjęcie,raster","Łatwy","Diodowy"],
+[65,"Jakość graweru","Drewno – grawerowanie zbyt jasne i słabo widoczne","Grawer jest prawie niewidoczny; słaby kontrast między grawerowaniem a drewnem; efekt blady","Za niska moc; jasne drewno; duża prędkość; materiał nie absorbuje dobrze wiązki 450nm","Zastosuj boraks lub sodę oczyszczoną jako preparat przed grawerowaniem – zwiększają ciemność graweru o 50-100%; lub wybierz ciemniejszy gatunek drewna","boraks,soda,kontrast,jasne,ciemność,preparat,absorpcja","Łatwy","Diodowy"],
+[66,"Jakość graweru","Boraks – jak przygotować i nanosić roztwór","Boraks nierównomiernie pokrywa powierzchnię; grawer po boraksie jest nierówny; zdjęcie wychodzi plamiste","Zła proporcja lub zła metoda nanoszenia; za gruba warstwa boraksu; grawerowanie przed wyschnięciem","Roztwór: 1 łyżka boraksu na 400ml wody; nanieś pędzlem lub sprayem cienką równomierną warstwę; odczekaj 20-30 minut aż całkowicie wyschnie; zmniejsz moc lasera o 40-50% w stosunku do normalnych ustawień","boraks,roztwór,proporcja,woda,pędzel,spray,schnięcie,moc","Łatwy","Diodowy"],
+[67,"Jakość graweru","Soda oczyszczona jako alternatywa dla boraksu","Efekt po sodzie słabszy niż oczekiwany; soda niejednolicie pokrywa drewno","Soda jest łagodniejsza niż boraks i wymaga wyższego stężenia; w EU boraks jest trudno dostępny dla konsumentów","Roztwór: 1 łyżka sody na 160ml wody (stężenie ~10%); nanieś sprayem; odczekaj min. 20-30 minut lub całą noc dla najlepszego efektu; zmniejsz moc o 20-30% w stosunku do normalnych ustawień","soda oczyszczona,alternatywa,boraks,EU,stężenie,roztwór","Łatwy","Diodowy"],
+[68,"Jakość graweru","Boraks – sklejka wygięła się po naniesieniu","Sklejka pofalowała lub wygięła się po zastosowaniu boraksu lub sody","Za dużo nałożonego roztworu; woda wsiąkła nierównomiernie w warstwę drewna","Nanieś bardzo cienką warstwę; nie namaczaj drewna – ma być lekko wilgotne nie mokre; dociśnij sklejkę płaskim ciężarem podczas schnięcia","wygięcie,falowanie,warstwa,cienka,ciężar,schnięcie","Łatwy","Diodowy"],
+[69,"Jakość graweru","Boraks – za ciemny wynik po grawerowaniu","Grawer jest zbyt ciemny i za mało detali w ciemnych obszarach zdjęcia","Boraks podwaja efektywną moc lasera – stare ustawienia mocy dają za silny efekt","Po naniesieniu boraksu zmniejsz moc o 40-50%; np. jeśli normalnie używasz 40% mocy to po boraksie zacznij od 20%; zawsze testuj na odpadach","boraks,za ciemne,moc,test,odpady,ustawienia","Łatwy","Diodowy"],
+[70,"Jakość graweru","Brak wyraźnego efektu po grawerowaniu – jak poprawić bez chemii","Grawer na sklejce wyszedł OK ale chcielibyśmy głębszy kontrast bez preparatów chemicznych","Pojedyncze przejście i normalna moc nie dają maksymalnego kontrastu na jaśniejszych gatunkach drewna","Drugi przebieg tego samego pliku daje znaczną poprawę; zmniejsz prędkość o połowę; lub lekko defokusuj laser o 1-2mm dla szerszej i ciemniejszej linii (traci jednak ostrość)","kontrast,drugi przebieg,prędkość,defokus,ostrość","Łatwy","Diodowy"],
+[71,"Jakość graweru","Grawerowanie zdjęcia – za ciemny wynik; utrata detali w cieniach","Ciemne obszary zdjęcia są grawerowane jako jednolita czarna masa bez żadnych detali","Za duża moc; za małe DPI; zdjęcie nie zostało przygotowane pod kąt grawerowania","Zmniejsz moc; zwiększ DPI do 400; w Photoshopie podnieś jasność i kontrast przed grawerowaniem; używaj funkcji Imag-R lub Lightburn Image Adjust; żelazna zasada – mniej mocy = więcej detali","za ciemne,cienie,detale,moc,Imag-R,Image Adjust,LightBurn","Łatwy","Diodowy"],
+[72,"Jakość graweru","Grawerowanie zdjęcia – jak czyścić i finalizować wynik","Grawerowane zdjęcie ma ślady sadzy i pyłu; krawędzie są brudne; kontrast po wyschnięciu jest słabszy","Naturalny efekt grawerowania na drewnie zawsze zostawia pewien pył i sadzę","Wyczyść alkoholem izopropylowym po grawerowaniu; jeśli za ciemno – lekko przeszlifuj papierem 400-grit; zapieczętuj lakierem bezbarwnym poliuretanowym sprayem (najpierw delikatna warstwa utrwalająca potem właściwa); nie używaj lakierów olejowych bo rozmazują","czyszczenie,alkohol,szlifowanie,lakier,poliuretan,finalizacja,sadza","Łatwy","Diodowy"]
+];
+
+const catClassFn=cat=>catClass[cat]||"cat-M";
+const lvlClassFn=lvl=>lvlClass[lvl]||"lvl-easy";
+
+function buildTable(){
+  const tbody=document.getElementById('tbody');
+  data.forEach(r=>{
+    const tags=r[6].split(',').map(t=>`<span>${t.trim()}</span>`).join('');
+    const tr=document.createElement('tr');
+    tr.dataset.search=[r[1],r[2],r[3],r[4],r[5],r[6]].join(' ').toLowerCase();
+    tr.dataset.cat=r[1];
+    tr.dataset.lvl=r[7];
+    tr.dataset.type=r[8];
+    tr.innerHTML=`
+      <td class="num">${r[0]}</td>
+      <td><span class="cat ${catClassFn(r[1])}">${r[1]}</span></td>
+      <td><strong class="title">${r[2]}</strong></td>
+      <td>${r[3]}</td>
+      <td>${r[4]}</td>
+      <td>${r[5]}</td>
+      <td class="tags">${tags}</td>
+      <td><span class="lvl ${lvlClassFn(r[7])}">${r[7]}</span></td>
+      <td>${r[8]}</td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('headerStats').textContent=
+    `${data.length} problemów · 10 kategorii · Laser Diodowy i Fiber · Źródła: xTool Support, Sawmill Creek, OMG Laser, LaserTips.org, LA Hobby Guy, cnc.info.pl, signs.pl, elektroda.pl`;
+  updateStats(data.length);
+}
+
+function updateStats(n){
+  document.getElementById('stats').textContent=`${n} / ${data.length} problemów`;
+}
+
+function filter(){
+  const q=document.getElementById('search').value.toLowerCase();
+  const cat=document.getElementById('catFilter').value;
+  const lvl=document.getElementById('lvlFilter').value;
+  const type=document.getElementById('typeFilter').value;
+  let visible=0;
+  document.querySelectorAll('#tbody tr').forEach(tr=>{
+    const ok=(!q||tr.dataset.search.includes(q))
+           &&(!cat||tr.dataset.cat===cat)
+           &&(!lvl||tr.dataset.lvl===lvl)
+           &&(!type||tr.dataset.type.includes(type));
+    tr.classList.toggle('hidden',!ok);
+    if(ok)visible++;
+  });
+  updateStats(visible);
+  document.getElementById('noResults').style.display=visible===0?'block':'none';
+}
+
+buildTable();
+
+// Obsługa parametru ?q= z URL (przekierowanie z głównej strony)
+(function(){
+    var params = new URLSearchParams(window.location.search);
+    var q = params.get('q');
+    if(q){
+        document.getElementById('search').value = q;
+        filter();
+        document.querySelector('.toolbar').scrollIntoView({behavior:'smooth'});
+    }
+})();
+</script>
+</body>
+</html>
