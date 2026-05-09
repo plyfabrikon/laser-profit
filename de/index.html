@@ -261,6 +261,7 @@ footer{text-align:center;margin-top:65px;padding:32px;color:var(--muted);border-
         <a href="https://laserprofit.eu/de/compare/" class="nav-link" title="Laser Vergleichsrechner 2026">🏆 LASER RANKING</a>
         <a href="#rechner" class="nav-link" data-t="nav_calc">🧮 RECHNER</a>
         <a href="#dateien" class="nav-link" data-t="nav_files">📂 DATEIEN</a>
+        <a href="https://laserprofit.eu/de/lightburn/" class="nav-link">💡 LIGHTBURN FAQ</a>
         <a href="#sicherheit" class="nav-link danger" data-t="nav_bhp">⚠️ SICHERHEIT</a>
         <button class="theme-btn" onclick="toggleTheme()" id="themeBtn" data-t="theme_light">☀️ Heller Modus</button>
 
@@ -370,7 +371,7 @@ footer{text-align:center;margin-top:65px;padding:32px;color:var(--muted);border-
 <div id="changelogBanner" style="margin:20px auto 18px;background:#0d1b2e;border:1.5px solid var(--orange);border-radius:14px;overflow:hidden;max-width:1060px;">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(255,107,43,.08);cursor:pointer;gap:12px;" onclick="toggleChangelog()">
         <div style="display:flex;align-items:center;gap:10px;">
-            <span style="background:var(--orange);color:#fff;font-size:.58rem;font-weight:700;padding:2px 8px;border-radius:10px;letter-spacing:1px;white-space:nowrap;">v2.7 · Apr 2026</span>
+            <span style="background:var(--orange);color:#fff;font-size:.58rem;font-weight:700;padding:2px 8px;border-radius:10px;letter-spacing:1px;white-space:nowrap;">v2.8 · Mai 2026</span>
             <span style="font-size:.75rem;font-weight:700;color:var(--text);">📋 Release Notes – Was gibt es Neues im Rechner?</span>
         </div>
         <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
@@ -379,21 +380,21 @@ footer{text-align:center;margin-top:65px;padding:32px;color:var(--muted);border-
         </div>
     </div>
     <div id="changelogBody" style="display:none;padding:16px 18px;border-top:1px solid var(--border);">
-        <!-- v2.7 AKTUELL -->
+        <!-- v2.8 AKTUELL -->
         <div style="margin-bottom:16px;">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-                <span style="background:var(--orange);color:#fff;font-size:.6rem;font-weight:700;padding:2px 9px;border-radius:10px;">v2.7</span>
-                <span style="font-size:.72rem;color:var(--muted);">26. April 2026</span>
+                <span style="background:var(--orange);color:#fff;font-size:.6rem;font-weight:700;padding:2px 9px;border-radius:10px;">v2.8</span>
+                <span style="font-size:.72rem;color:var(--muted);">9. Mai 2026</span>
                 <span style="background:rgba(34,197,94,.12);color:#22c55e;font-size:.58rem;padding:1px 7px;border-radius:8px;margin-left:auto;">AKTUELL</span>
             </div>
             <div style="display:grid;gap:7px;">
                 <div style="display:flex;gap:8px;align-items:flex-start;">
                     <span style="background:rgba(34,197,94,.15);color:#22c55e;font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:6px;white-space:nowrap;margin-top:1px;">NEU</span>
-                    <span style="font-size:.72rem;color:var(--text);line-height:1.5;">🏆 <b>Diodenlaser-Vergleichsrechner 2026</b> – Vergleich der besten Modelle von xTool, Creality, Atomstack, Sculpfun nach Leistung, Preis und Anwendung. <a href="https://laserprofit.eu/compare/" style="color:var(--orange);">Zum Vergleich →</a></span>
+                    <span style="font-size:.72rem;color:var(--text);line-height:1.5;">💡 <b>LightBurn FAQ für Einsteiger</b> – 25 Fragen und Antworten mit Suchfunktion und Kategorien. Verbindung, Positionierung, Fill, Schneiden, Materialien und mehr. <a href="https://laserprofit.eu/de/lightburn/" style="color:var(--orange);">Zum FAQ →</a></span>
                 </div>
                 <div style="display:flex;gap:8px;align-items:flex-start;">
                     <span style="background:rgba(34,197,94,.15);color:#22c55e;font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:6px;white-space:nowrap;margin-top:1px;">NEU</span>
-                    <span style="font-size:.72rem;color:var(--text);line-height:1.5;">🔍 <b>Laser-Problemdatenbank</b> – 72 echte Probleme mit Dioden- und Faserlasern aus PL &amp; EN Foren. Suchleiste direkt über dem Hero-Bereich. <a href="https://laserprofit.eu/de/laser-problems/" style="color:var(--orange);">Zur Datenbank →</a></span>
+                    <span style="font-size:.72rem;color:var(--text);line-height:1.5;">📈 <b>Erweiterter FAQ-Bereich</b> – FAQ des Rechners von 3 auf 10 Fragen erweitert mit echten Antworten zu Preisgestaltung, Stundensätzen und Maschinenabschreibung.</span>
                 </div>
             </div>
         </div>
@@ -401,11 +402,28 @@ footer{text-align:center;margin-top:65px;padding:32px;color:var(--muted);border-
         <div style="border-top:1px solid var(--border);padding-top:12px;margin-bottom:0;">
             <button onclick="toggleOldChangelog()" id="oldChangelogBtn"
                 style="background:none;border:1px solid var(--border);color:var(--muted);font-size:.65rem;font-family:var(--font);padding:5px 12px;border-radius:8px;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:6px;">
-                <span>📂 Ältere Versionen anzeigen (v2.4 – v2.6)</span>
+                <span>📂 Ältere Versionen anzeigen (v2.4 – v2.7)</span>
                 <span id="oldChangelogArrow" style="transition:.2s;">▼</span>
             </button>
         </div>
         <div id="oldChangelogBody" style="display:none;margin-top:12px;">
+            <!-- v2.7 -->
+            <div style="margin-bottom:16px;padding-top:14px;border-top:1px solid var(--border);">
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                    <span style="background:#334155;color:#94a3b8;font-size:.6rem;font-weight:700;padding:2px 9px;border-radius:10px;">v2.7</span>
+                    <span style="font-size:.72rem;color:var(--muted);">26. April 2026</span>
+                </div>
+                <div style="display:grid;gap:7px;">
+                    <div style="display:flex;gap:8px;align-items:flex-start;">
+                        <span style="background:rgba(34,197,94,.15);color:#22c55e;font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:6px;white-space:nowrap;margin-top:1px;">NEU</span>
+                        <span style="font-size:.72rem;color:var(--text);line-height:1.5;">🏆 <b>Diodenlaser-Vergleichsrechner 2026</b> – beste Modelle von xTool, Creality, Atomstack, Sculpfun. <a href="https://laserprofit.eu/de/compare/" style="color:var(--orange);">Zum Vergleich →</a></span>
+                    </div>
+                    <div style="display:flex;gap:8px;align-items:flex-start;">
+                        <span style="background:rgba(34,197,94,.15);color:#22c55e;font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:6px;white-space:nowrap;margin-top:1px;">NEU</span>
+                        <span style="font-size:.72rem;color:var(--text);line-height:1.5;">🔍 <b>Laser-Problemdatenbank</b> – 72 echte Probleme aus PL &amp; EN Foren. <a href="https://laserprofit.eu/de/laser-problems/" style="color:var(--orange);">Zur Datenbank →</a></span>
+                    </div>
+                </div>
+            </div>
             <!-- v2.6 -->
             <div style="margin-bottom:16px;padding-top:14px;border-top:1px solid var(--border);">
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
