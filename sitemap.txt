@@ -7,3 +7,6 @@ https://laserprofit.eu/de/compare/
 https://laserprofit.eu/laser-problems/
 https://laserprofit.eu/en/laser-problems/
 https://laserprofit.eu/de/laser-problems/
+https://laserprofit.eu/lightburn/
+https://laserprofit.eu/en/lightburn/
+https://laserprofit.eu/de/lightburn/
