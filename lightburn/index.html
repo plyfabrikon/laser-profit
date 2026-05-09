@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LightBurn dla Początkujących – FAQ i Najczęstsze Problemy | LaserProfit.eu</title>
+<meta name="description" content="Najczęstsze problemy i pytania dotyczące LightBurn. Połączenie z laserem, ustawienia, Fill, cięcie, grawerowanie zdjęć – odpowiedzi dla początkujących.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0d1b2e;
+  --card:#132237;
+  --card2:#1a2f47;
+  --orange:#ff6b2b;
+  --navy:#1e3a5f;
+  --text:#e8f0fe;
+  --muted:#7a91b0;
+  --border:#1e3352;
+  --nav-bg:rgba(13,27,46,.97);
+  --font:'Poppins',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--bg);color:var(--text);line-height:1.6;font-size:14px}
+
+/* NAV */
+nav{background:var(--nav-bg);padding:12px 0;position:sticky;top:0;border-bottom:1px solid var(--border);z-index:200;backdrop-filter:blur(12px)}
+.nav-content{max-width:1060px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;padding:0 20px;gap:10px;flex-wrap:wrap}
+.logo{font-weight:700;font-size:.9rem;color:var(--orange);text-decoration:none;letter-spacing:1.5px}
+.nav-links{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.nav-link{color:var(--text);text-decoration:none;font-size:.7rem;font-weight:600;border-bottom:2px solid transparent;transition:.25s;padding-bottom:2px}
+.nav-link:hover{border-color:var(--orange);color:var(--orange)}
+.nav-link.active{border-color:var(--orange);color:var(--orange)}
+
+/* HERO */
+.hero-bar{background:linear-gradient(135deg,var(--navy),#0a1624);border-bottom:2px solid var(--orange);padding:36px 20px 32px}
+.hero-inner{max-width:1060px;margin:0 auto}
+.hero-badge{display:inline-block;background:var(--orange);color:#fff;font-size:.64rem;font-weight:700;padding:3px 12px;border-radius:20px;margin-bottom:12px;letter-spacing:.8px}
+.hero-bar h1{font-size:clamp(1.3rem,3vw,2rem);color:#fff;margin-bottom:8px;line-height:1.25}
+.hero-bar p{color:rgba(255,255,255,.65);font-size:.84rem;max-width:620px}
+.stats{display:flex;gap:24px;margin-top:18px;flex-wrap:wrap}
+.stat{background:rgba(255,107,43,.1);border:1px solid rgba(255,107,43,.3);border-radius:8px;padding:8px 16px;text-align:center}
+.stat strong{display:block;font-size:1.2rem;color:var(--orange);font-weight:700}
+.stat span{font-size:.68rem;color:var(--muted)}
+
+/* SEARCH */
+.container{max-width:1060px;margin:0 auto;padding:30px 20px}
+.search-wrap{position:relative;margin-bottom:28px}
+.search-wrap input{width:100%;padding:14px 50px 14px 18px;background:var(--card);border:2px solid var(--border);border-radius:12px;color:var(--text);font-family:var(--font);font-size:.9rem;outline:none;transition:.2s}
+.search-wrap input:focus{border-color:var(--orange)}
+.search-wrap input::placeholder{color:var(--muted)}
+.search-icon{position:absolute;right:16px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:1.1rem;pointer-events:none}
+.search-count{font-size:.75rem;color:var(--muted);margin-bottom:16px;min-height:20px}
+
+/* CATEGORIES */
+.cats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px}
+.cat-btn{background:var(--card2);border:1.5px solid var(--border);color:var(--muted);padding:5px 14px;border-radius:20px;cursor:pointer;font-size:.7rem;font-weight:700;font-family:var(--font);transition:.2s}
+.cat-btn:hover,.cat-btn.active{border-color:var(--orange);color:var(--orange);background:rgba(255,107,43,.1)}
+
+/* FAQ ITEMS */
+.faq-list{display:flex;flex-direction:column;gap:10px}
+.faq-item{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:.2s}
+.faq-item:hover{border-color:rgba(255,107,43,.4)}
+.faq-item.hidden{display:none}
+.faq-q{padding:16px 20px;cursor:pointer;display:flex;align-items:flex-start;gap:14px;user-select:none}
+.faq-num{background:var(--orange);color:#fff;font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:20px;flex-shrink:0;margin-top:2px;white-space:nowrap}
+.faq-q-text{flex:1;font-weight:600;font-size:.86rem;line-height:1.45}
+.faq-arrow{flex-shrink:0;color:var(--muted);transition:transform .25s;font-size:.8rem;margin-top:3px}
+.faq-item.open .faq-arrow{transform:rotate(180deg);color:var(--orange)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .35s ease}
+.faq-item.open .faq-a{max-height:600px}
+.faq-a-inner{padding:0 20px 18px 20px;border-top:1px solid var(--border);padding-top:14px;margin-top:0}
+.faq-a-inner p{font-size:.82rem;color:var(--muted);line-height:1.75}
+.faq-a-inner strong{color:var(--text)}
+.faq-a-inner .tip{background:rgba(255,107,43,.08);border-left:3px solid var(--orange);padding:10px 14px;border-radius:0 8px 8px 0;margin-top:12px;font-size:.79rem;color:var(--text)}
+.faq-cat-tag{font-size:.62rem;font-weight:700;padding:1px 7px;border-radius:10px;flex-shrink:0;margin-top:3px}
+.cat-polaczenie{background:rgba(59,130,246,.15);color:#60a5fa}
+.cat-pozycjonowanie{background:rgba(168,85,247,.15);color:#c084fc}
+.cat-fill{background:rgba(34,197,94,.15);color:#4ade80}
+.cat-zdjecia{background:rgba(245,158,11,.15);color:#fbbf24}
+.cat-ciecie{background:rgba(239,68,68,.15);color:#f87171}
+.cat-import{background:rgba(20,184,166,.15);color:#2dd4bf}
+.cat-ogolne{background:rgba(156,163,175,.15);color:#9ca3af}
+.cat-material{background:rgba(251,146,60,.15);color:#fb923c}
+
+/* NO RESULTS */
+.no-results{text-align:center;padding:50px 20px;color:var(--muted);display:none}
+.no-results .emoji{font-size:2.5rem;margin-bottom:12px}
+
+/* FOOTER NOTE */
+.footer-note{margin-top:40px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px 24px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.footer-note p{font-size:.8rem;color:var(--muted);flex:1}
+.footer-note a{color:var(--orange);text-decoration:none;font-weight:700}
+
+@media(max-width:600px){
+  .stats{gap:12px}
+  .faq-q{padding:13px 14px;gap:10px}
+  .faq-a-inner{padding:0 14px 14px 14px;padding-top:12px}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-content">
+    <a href="https://laserprofit.eu/" class="logo">⚡ LASERPROFIT.EU</a>
+    <div class="nav-links">
+      <a href="https://laserprofit.eu/" class="nav-link">🧮 Kalkulator</a>
+      <a href="https://laserprofit.eu/compare/" class="nav-link">📊 Porównaj</a>
+      <a href="https://laserprofit.eu/laser-problems/" class="nav-link">🔧 Problemy</a>
+      <a href="#" class="nav-link active">💡 LightBurn FAQ</a>
+    </div>
+  </div>
+</nav>
+
+<div class="hero-bar">
+  <div class="hero-inner">
+    <span class="hero-badge">PORADNIK · 2026</span>
+    <h1>LightBurn dla Początkujących</h1>
+    <p>Najczęstsze problemy, pytania i odpowiedzi. Znajdź rozwiązanie swojego problemu — bez przeszukiwania forum godzinami.</p>
+    <div class="stats">
+      <div class="stat"><strong id="totalCount">25</strong><span>pytań i odpowiedzi</span></div>
+      <div class="stat"><strong>8</strong><span>kategorii</span></div>
+      <div class="stat"><strong>2026</strong><span>aktualne</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="search-wrap">
+    <input type="text" id="searchInput" placeholder="🔍  Wpisz problem np. &quot;nie łączy się&quot;, &quot;Fill&quot;, &quot;zdjęcie za ciemne&quot;..." oninput="filterFAQ()">
+  </div>
+
+  <div class="cats">
+    <button class="cat-btn active" onclick="filterCat('all',this)">Wszystkie</button>
+    <button class="cat-btn" onclick="filterCat('polaczenie',this)">🔌 Połączenie</button>
+    <button class="cat-btn" onclick="filterCat('pozycjonowanie',this)">📐 Pozycjonowanie</button>
+    <button class="cat-btn" onclick="filterCat('fill',this)">🎨 Fill / Wypełnienie</button>
+    <button class="cat-btn" onclick="filterCat('zdjecia',this)">🖼️ Zdjęcia</button>
+    <button class="cat-btn" onclick="filterCat('ciecie',this)">✂️ Cięcie</button>
+    <button class="cat-btn" onclick="filterCat('import',this)">📁 Import plików</button>
+    <button class="cat-btn" onclick="filterCat('material',this)">🪵 Materiały</button>
+    <button class="cat-btn" onclick="filterCat('ogolne',this)">⚙️ Ogólne</button>
+  </div>
+
+  <div class="search-count" id="searchCount"></div>
+
+  <div class="faq-list" id="faqList">
+
+    <!-- POŁĄCZENIE -->
+    <div class="faq-item" data-cat="polaczenie" data-q="dlaczego lightburn nie łączy się z laserem port sterownik usb kabel">
+      <div class="faq-q" onclick="toggle(this)">
+        <span class="faq-num">01</span>
+        <span class="faq-q-text">Dlaczego LightBurn nie łączy się z moim laserem?</span>
+        <span class="faq-cat-tag cat-polaczenie">Połączenie</span>
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-a"><div class="faq-a-inner">
+        <p>Najczęstsze przyczyny: <strong>niewłaściwy port COM</strong>, brak sterownika, zły typ urządzenia w konfiguracji, uszkodzony kabel USB lub inne oprogramowanie blokujące port. Sprawdź kolejno: czy laser jest zasilony i włączony, czy przycisk awaryjny (E-Stop) jest odblokowany, zamknij LaserGRBL lub inne programy, spróbuj innego kabla USB i ręcznie wybierz port w Devices.</p>
+        <div class="tip">💡 W Menedżerze Urządzeń Windows (DevMgmt.msc) sprawdź czy laser pojawia się jako port COM. Jeśli nie — brakuje sterownika CH340 lub CP2102.</div>
+      </div></div>
+    </div>
+
+    <div class="faq-item" data-cat="polaczenie" data-q="find my laser nie znajduje nic automatyczne wykrywanie nie działa">
+      <div class="faq-q" onclick="toggle(this)">
+        <span class="faq-num">02</span>
+        <span class="faq-q-text">Dlaczego „Find My Laser" nic nie znajduje?</span>
+        <span class="faq-cat-tag cat-polaczenie">Połączenie</span>
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-a"><div class="faq-a-inner">
+        <p>Automatyczne wykrywanie działa tylko gdy kontroler poprawnie zgłasza się do systemu — wiele maszyn tego nie robi. Zamiast czekać na autodetect, <strong>ręcznie dodaj urządzenie</strong> w Edit → Devices → Create manually. Wybierz GRBL i odpowiedni port COM. W praktyce ręczna konfiguracja działa szybciej i pewniej niż automatyczne wyszukiwanie.</p>
+        <div class="tip">💡 Nie wiesz który port? W Menedżerze Urządzeń podłącz i odłącz USB — obserwuj który port znika i pojawia się.</div>
+      </div></div>
+    </div>
+
+    <div class="faq-item" data-cat="polaczenie" data-q="lightburn rozłącza się podczas pracy komunikat błąd połączenie zrywa">
+      <div class="faq-q" onclick="toggle(this)">
+        <span class="faq-num">03</span>
+        <span class="faq-q-text">LightBurn rozłącza się w trakcie pracy — co robić?</span>
+        <span class="faq-cat-tag cat-polaczenie">Połączenie</span>
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-a"><div class="faq-a-inner">
+        <p>Najczęstsza przyczyna to <strong>niskiej jakości kabel USB</strong> lub zarządzanie energią Windows, które wyłącza port USB po chwili bezczynności. Sprawdź: użyj krótszego, ekranowanego kabla USB (max 1,5m), wyłącz "USB selective suspend" w ustawieniach zasilania Windows, a w Menedżerze Urządzeń → właściwości portu COM → Zarządzanie energią → odznacz "Zezwól komputerowi na wyłączenie tego urządzenia".</p>
+      </div></div>
+    </div>
+
+    <!-- POZYCJONOWANIE -->
+    <div class="faq-item" data-cat="pozycjonowanie" data-q="ramka frame pokazuje inny obszar graweruje w złym miejscu job origin start from">
+      <div class="faq-q" onclick="toggle(this)">
+        <span class="faq-num">04</span>
+        <span class="faq-q-text">Ramka „Frame" pokazuje inne miejsce niż faktyczne grawerowanie — dlaczego?</span>
+        <span class="faq-cat-tag cat-pozycjonowanie">Pozycjonowanie</span>
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-a"><div class="faq-a-inner">
+        <p>Przyczyną jest <strong>niezgodność trybu Start From i punktu Job Origin</strong>. Framing pokazuje obszar zgodny z aktualnym trybem, ale jeśli go źle ustawiłeś, laser zacznie w innym miejscu. Sprawdź panel "Laser" w prawym dolnym rogu — tryb "Absolute Coords" jest najprostszy dla początkujących, bo projekt leży dokładnie tam gdzie na siatce LightBurn.</p>
+        <div class="tip">💡 Użyj "Absolute Coords" dopóki nie rozumiesz różnic między trybami — to eliminuje 90% problemów z pozycjonowaniem.</div>
+      </div></div>
+    </div>
+
+    <div class="faq-item" data-cat="pozycjonowanie" data-q="absolute coords current position user origin różnica jaka różnica tryby pozycjonowania">
+      <div class="faq-q" onclick="toggle(this)">
+        <span class="faq-num">05</span>
+        <span class="faq-q-text">Jaka jest różnica między Absolute Coords, Current Position i User Origin?</span>
+        <span class="faq-cat-tag cat-pozycjonowanie">Pozycjonowanie</span>
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-a"><div class="faq-a-inner">
+        <p><strong>Absolute Coords</strong> — projekt startuje dokładnie tam gdzie leży na siatce roboczej. Najłatwiejszy tryb.<br><br><strong>Current Position</strong> — projekt startuje względem aktualnej pozycji głowicy. Punkt Job Origin decyduje który róg/środek projektu pokrywa się z głowicą.<br><br><strong>User Origin</strong> — projekt startuje względem wcześniej zapisanego punktu bazowego (ustawionego przyciskiem Set User Origin na maszynie).</p>
+        <div class="tip">💡 Dla początkujących: używaj Absolute Coords i układaj projekt na siatce dokładnie tam gdzie chcesz go mieć na materiale.</div>
+      </div></div>
+    </div>
+
+    <div class="faq-item" data-cat="pozycjonowanie" data-q="projekt odwrócony lustrzany do góry nogami device origin">
+      <div class="faq-q" onclick="toggle(this)">
+        <span class="faq-num">06</span>
+        <span class="faq-q-text">Projekt wychodzi odwrócony lub lustrzany — jak naprawić?</span>
+        <span class="faq-cat-tag cat-pozycjonowanie">Pozycjonowanie</span>
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-a"><div class="faq-a-inner">
+        <p>Winna jest najczęściej <strong>zła konfiguracja Device Origin</strong> — punktu startowego maszyny. Przejdź do Edit → Device Settings i sprawdź czy "Origin" (lewy dolny, lewy górny, prawy dolny lub prawy górny) pasuje do faktycznego home Twojej maszyny. Jeśli maszyna jedzie do lewego górnego rogu po włączeniu — ustaw tam origin.</p>
+        <div class="tip">💡 Włącz maszynę, naciśnij Home i patrz gdzie jedzie głowica. To jest Twój Device Origin.</div>
+      </div></div>
+    </div>
+
+    <!-- FILL -->
+    <div class="faq-item" data-cat="fill" data-q="fill nie działa litery nie wypełniają się kształt otwarty wektory">
+      <div class="faq-q" onclick="toggle(this)">
+        <span class="faq-num">07</span>
+        <span class="faq-q-text">Tryb Fill nie działa — litery lub kształty się nie wypełniają</span>
+        <span class="faq-cat-tag cat-fill">Fill / Wypełnienie</span>
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-a"><div class="faq-a-inner">
+        <p>Fill działa wyłącznie na <strong>zamkniętych kształtach</strong>. Jeśli wektor ma choćby mikro-przerwę, LightBurn traktuje go jako otwarty i nie może określić obszaru wypełnienia. Zaznacz kształt → Edit → Auto-Join selected shapes (Alt+J) żeby LightBurn spróbował zamknąć ścieżki. Sprawdź też w podglądzie Edit → Node Editor czy nie ma rozłączonych węzłów.</p>
+        <div class="tip">💡 Importujesz SVG z Internetu? Często mają "otwarte" ścieżki mimo że wyglądają zamknięcie. Użyj Edit → Close selected paths.</div>
+      </div></div>
+    </div>
+
+    <div class="faq-item" data-cat="fill" data-q="wypełnienia nie widać wireframe podgląd preview tryb wyświetlania">
+      <div class="faq-q" onclick="toggle(this)">
+        <span class="faq-num">08</span>
+        <span class="faq-q-text">W obszarze roboczym nie widzę wypełnienia choć w podglądzie wygląda dobrze</span>
+        <span class="faq-cat-tag cat-fill">Fill / Wypełnienie</span>
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-a"><div class="faq-a-inner">
+        <p>LightBurn domyślnie wyświetla projekt w trybie <strong>Wireframe</strong> (samo kontury). To normalne — obszar roboczy nigdy nie pokazuje wypełnień tak jak będą grawerowane. Zawsze używaj <strong>Preview (Alt+P)</strong> żeby zobaczyć rzeczywisty efekt przed uruchomieniem. Preview pokazuje dokładnie co i w jakiej kolejności zostanie wykonane.</p>
+      </div></div>
+    </div>
+
+    <div class="faq-item" data-cat="fill" data-q="fill line kolejność warstwy cut fill layer order optymalizacja">
+      <div class="faq-q" onclick="toggle(this)">
+        <span class="faq-num">09</span>
+        <span class="faq-q-text">W jakiej kolejności LightBurn wykonuje Fill i cięcie (Cut)?</span>
+        <span class="faq-cat-tag cat-fill">Fill / Wypełnienie</span>
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-a"><div class="faq-a-inner">
+        <p>LightBurn wykonuje warstwy <strong>od góry do dołu</strong> w panelu Cuts/Layers. Standardowa praktyka: <strong>najpierw grawerowanie (Fill)</strong>, potem cięcie obrysu (Line/Cut). Jeśli najpierw wytniesz obrys, materiał może się przesunąć i grawer nie trafi w dobre miejsce. Przeciągaj warstwy w panelu żeby zmienić kolejność.</p>
+        <div class="tip">💡 Zawsze cięcie na końcu — to złota zasada laserowania.</div>
+      </div></div>
+    </div>
+
+    <!-- ZDJĘCIA -->
+    <div class="faq-item" data-cat="zdjecia" data-q="zdjęcie za ciemne za jasne słabo wychodzi image mode moc prędkość foto">
+      <div class="faq-q" onclick="toggle(this)">
+        <span class="faq-num">10</span>
+        <span class="faq-q-text">Zdjęcie wychodzi za ciemne, za jasne albo słabo — jak ustawić?</span>
+        <span class="faq-cat-tag cat-zdjecia">Zdjęcia</span>
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-a"><div class="faq-a-inner">
+        <p>Nie ma jednego ustawienia dla wszystkich. Kluczowe parametry: <strong>Image Mode</strong> (Jarvis, Stucki lub Newsprint dla zdjęć na drewnie), <strong>Line Interval</strong> (0,1–0,2mm dla dobrego detalu), moc 15–25% i prędkość 2000–4000mm/min dla drewna. Zacznij od małego kawałka materiału testowego. <br><br>Najczęstsze błędy: za duża moc (przypalanie), tryb "Grayscale" zamiast ditheringu, zbyt duży Line Interval (widoczne prążki).</p>
+        <div class="tip">💡 Użyj funkcji Material Test w LightBurn — generuje siatkę próbek z różną mocą i prędkością. To najszybsza droga do dobrych ustawień.</div>
+      </div></div>
+    </div>
+
+    <div class="faq-item" data-cat="zdjecia" data-q="zdjęcie pass-through overscan duże zdjęcie kafelkowanie tile">
+      <div class="faq-q" onclick="toggle(this)">
+        <span class="faq-num">11</span>
+        <span class="faq-q-text">Jak grawerować duże zdjęcie które nie mieści się na polu roboczym?</span>
+        <span class="faq-cat-tag cat-zdjecia">Zdjęcia</span>
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-a"><div class="faq-a-inner">
+        <p>LightBurn ma funkcję <strong>Rotary/Tiling</strong> do dużych projektów, ale najprostsze rozwiązanie to podzielić projekt ręcznie. Użyj narzędzia Boolean lub zwykłego prostokąta jako maski i wyeksportuj projekt w kawałkach. Przy grawerowaniu cylindrycznym (np. kubki) użyj modułu Rotary. Dla bardzo dużych formatów warto też sprawdzić czy maszyna obsługuje "Pass-through" mode.</p>
+      </div></div>
+    </div>
+
+    <!-- CIĘCIE -->
+    <div class="faq-item" data-cat="ciecie" data-q="laser nie przecina materiału moc za niska sklejka grubość nie przechodzi przez">
+      <div class="faq-q" onclick="toggle(this)">
+        <span class="faq-num">12</span>
+        <span class="faq-q-text">Laser nie przecina materiału mimo wysokiej mocy — dlaczego?</span>
+        <span class="faq-cat-tag cat-ciecie">Cięcie</span>
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-a"><div class="faq-a-inner">
+        <p>Najczęstsze przyczyny: <strong>zła ostrość lasera</strong> (focus), zabrudzona soczewka lub okienko ochronne, zbyt szybka prędkość, za mała liczba przejść (Passes). Sprawdź focus — nawet 1mm odchyłki mocno redukuje moc cięcia. Wyczyść optykę suchą szmatką z mikrofibry. Zwiększ Passes do 2–3 zamiast podnosić moc do maksimum (niszczy diodę).</p>
+        <div class="tip">💡 Sklejka 3mm: spróbuj 90% mocy, 300mm/min, 2 passy. Jeśli dalej nie przechodzi — problem z ostrością lub brudną optyką.</div>
+      </div></div>
+    </div>
+
+    <div class="faq-item" data-cat="ciecie" data-q="cięcie i grawer nie pokrywają się przesunięte offset backlash kalibracja">
+      <div class="faq-q" onclick="toggle(this)">
+        <span class="faq-num">13</span>
+        <span class="faq-q-text">Cięcie i grawerowanie są przesunięte względem siebie — jak naprawić?</span>
+        <span class="faq-cat-tag cat-ciecie">Cięcie</span>
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-a"><div class="faq-a-inner">
+        <p>Przyczyną może być <strong>Scanning Offset</strong> (przesunięcie przy zmianach kierunku), luzy mechaniczne (backlash) lub przesuwający się materiał. W LightBurn: Edit → Device Settings → Scanning Offset Adjust — tu możesz skalibrować przesunięcie dla różnych prędkości. Sprawdź też czy materiał leży płasko i nie jeździ po stole.</p>
+        <div class="tip">💡 Scanning Offset to najczęstsza przyczyna "duchu" przy szybkim grawerowaniu. LightBurn ma wbudowany test kalibracji.</div>
+      </div></div>
+    </div>
+
+    <div class="faq-item" data-cat="ciecie" data-q="czarne zwęglone krawędzie palące się brzegi air assist dym">
+      <div class="faq-q" onclick="toggle(this)">
+        <span class="faq-num">14</span>
+        <span class="faq-q-text">Krawędzie są czarne i zwęglone — jak to wyeliminować?</span>
+        <span class="faq-cat-tag cat-ciecie">Cięcie</span>
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-a"><div class="faq-a-inner">
+        <p>Zwęglanie krawędzi to efekt za dużej mocy lub za wolnej prędkości. Rozwiązania: włącz <strong>Air Assist</strong> (dmuchawa odgania dym i chłodzi), zwiększ prędkość cięcia, zmniejsz moc a dodaj więcej przejść, sprawdź focus. Na sklejce możesz też nakleić papierową taśmę maskującą — chroni powierzchnię przed przypaleniem.</p>
+        <div class="tip">💡 Air Assist to jedno z najlepszych ulepszeń do lasera diodowego — wyraźnie czyściejsze cięcia i mniejsze ryzyko pożaru.</div>
+      </div></div>
+    </div>
+
+    <!-- IMPORT PLIKÓW -->
+    <div class="faq-item" data-cat="import" data-q="importowany plik SVG DXF ma zły rozmiar jednostki DPI skalowanie">
+      <div class="faq-q" onclick="toggle(this)">
+        <span class="faq-num">15</span>
+        <span class="faq-q-text">Importowany plik SVG lub DXF ma zły rozmiar — jak naprawić?</span>
+        <span class="faq-cat-tag cat-import">Import plików</span>
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-a"><div class="faq-a-inner">
+        <p>Najczęstsza przyczyna to <strong>niezgodność jednostek lub DPI</strong>. Dla SVG: sprawdź czy plik był tworzony w 72 DPI czy 96 DPI (Inkscape domyślnie używa 96 DPI). Przy imporcie LightBurn pyta o DPI — wybierz właściwe. Dla DXF: łatwo pomylić cale z milimetrami. W LightBurn File → Import → sprawdź opcje skalowania przy imporcie.</p>
+        <div class="tip">💡 Po imporcie zaznacz wszystko (Ctrl+A) i sprawdź wymiary w panelu na górze. Porównaj z oczekiwanym rozmiarem.</div>
+      </div></div>
+    </div>
+
+    <div class="faq-item" data-cat="import" data-q="tutoriale pokazują inne opcje beginner mode interfejs różni się ukryty funkcje">
+      <div class="faq-q" onclick="toggle(this)">
+        <span class="faq-num">16</span>
+        <span class="faq-q-text">Tutoriale pokazują inne opcje niż mam u siebie — dlaczego?</span>
+        <span class="faq-cat-tag cat-import">Import plików</span>
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-a"><div class="faq-a-inner">
+        <p>Dwie przyczyny: <strong>Beginner Mode</strong> ukrywa zaawansowane opcje, lub różnice wynikające z typu lasera (GRBL vs DSP vs Galvo mają różne ustawienia). Wyłącz Beginner Mode: Help → Beginner Mode (odznacz). Sprawdź też wersję LightBurn — od wersji 2.0 zmienił się interfejs i część funkcji zmieniła lokalizację.</p>
+      </div></div>
+    </div>
+
+    <div class="faq-item" data-cat="import" data-q="jak zapisać ustawienia material library biblioteka materiałów profile">
+      <div class="faq-q" onclick="toggle(this)">
+        <span class="faq-num">17</span>
+        <span class="faq-q-text">Jak zapisywać sprawdzone ustawienia żeby nie ustawiać od nowa?</span>
+        <span class="faq-cat-tag cat-import">Import plików</span>
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-a"><div class="faq-a-inner">
+        <p>Użyj <strong>Material Library</strong> (Window → Material Library). Możesz zapisywać własne profile dla konkretnych materiałów, grubości i operacji. Po zapisaniu — przeciągnij profil na warstwę i gotowe. To jedna z najlepszych funkcji LightBurn dla regularnych użytkowników.</p>
+        <div class="tip">💡 Skrzętnie zapisuj każdy udany test materiałowy. Za miesiąc nie pamiętasz że sklejka 3mm leciała 90% moc, 300mm/min.</div>
+      </div></div>
+    </div>
+
+    <!-- MATERIAŁY -->
+    <div class="faq-item" data-cat="material" data-q="jakie materiały można ciąć grawerować laserem diodowym drewno akryl skóra">
+      <div class="faq-q" onclick="toggle(this)">
+        <span class="faq-num">18</span>
+        <span class="faq-q-text">Jakie materiały można ciąć i grawerować laserem diodowym?</span>
+        <span class="faq-cat-tag cat-material">Materiały</span>
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-a"><div class="faq-a-inner">
+        <p><strong>Tak (grawer i cięcie):</strong> drewno, sklejka, MDF, skóra naturalna, filc, tektura, korek, guma.<br><strong>Tak (tylko grawer):</strong> stal nierdzewna ze sprayem Cermark, anodyzowane aluminium, ceramika, ciemny akryl (cięcie słabe).<br><strong>NIE:</strong> PVC/vinyl (chlor!), poliwęglan, ABS, laminaty z chlorem, lustra, szkło hartowane, materiały zawierające chrom.</p>
+        <div class="tip">⚠️ Nigdy nie laserujesz bez sprawdzenia składu materiału. PVC uwalnia trujący chlor.</div>
+      </div></div>
+    </div>
+
+    <div class="faq-item" data-cat="material" data-q="akryl przezroczysty laser diodowy nie tnie dlaczego transparent">
+      <div class="faq-q" onclick="toggle(this)">
+        <span class="faq-num">19</span>
+        <span class="faq-q-text">Dlaczego laser diodowy nie tnie przezroczystego akrylu?</span>
+        <span class="faq-cat-tag cat-material">Materiały</span>
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-a"><div class="faq-a-inner">
+        <p>Lasery diodowe emitują światło w paśmie niebieskim (~450nm) które <strong>przezroczysty akryl przepuszcza</strong> zamiast absorbować. Efekt: zero cięcia. Rozwiązania: użyj <strong>kolorowego lub mlecznego akrylu</strong> (ciemniejsze kolory działają lepiej), nałóż czarną farbę w sprayu na powierzchnię cięcia (po cięciu zmyj), lub kup laser CO2 który tnie każdy akryl.</p>
+      </div></div>
+    </div>
+
+    <div class="faq-item" data-cat="material" data-q="jak grawerować stal nierdzewną metal cermark molybdenum spray">
+      <div class="faq-q" onclick="toggle(this)">
+        <span class="faq-num">20</span>
+        <span class="faq-q-text">Jak grawerować stal nierdzewną laserem diodowym?</span>
+        <span class="faq-cat-tag cat-material">Materiały</span>
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-a"><div class="faq-a-inner">
+        <p>Potrzebujesz <strong>sprayu do znakowania metalu</strong> — Cermark, Thermark lub tańszy odpowiednik z dwusiarczkiem molibdenu (MoS2). Nałóż cienką równą warstwę na metal, odczekaj aż wyschnie, graweruj pełną mocą niską prędkością (ok 500–1000mm/min), po zakończeniu zmyj spray — zostaje trwały czarny nadruk. Bez sprayu laser diodowy tylko zarysuje metal.</p>
+      </div></div>
+    </div>
+
+    <!-- OGÓLNE -->
+    <div class="faq-item" data-cat="ogolne" data-q="preview podgląd przed uruchomieniem pracy czy trzeba zawsze">
+      <div class="faq-q" onclick="toggle(this)">
+        <span class="faq-num">21</span>
+        <span class="faq-q-text">Czy przed każdą pracą trzeba robić podgląd Preview?</span>
+        <span class="faq-cat-tag cat-ogolne">Ogólne</span>
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-a"><div class="faq-a-inner">
+        <p>Tak, to <strong>najlepsza praktyka</strong> której warto się trzymać zawsze. Preview (Alt+P) pokazuje rzeczywistą ścieżkę lasera, kolejność operacji, czas trwania i ewentualne problemy z pozycją lub wypełnieniem. Wiele błędów — szczególnie z Fill i pozycjonowaniem — widać w Preview zanim zmarnujesz materiał. Sprawdzanie Preview zajmuje 5 sekund i oszczędza materiał.</p>
+      </div></div>
+    </div>
+
+    <div class="faq-item" data-cat="ogolne" data-q="jak zresetować ustawienia lightburn pokręciłem stracił moc przywrócić domyślne">
+      <div class="faq-q" onclick="toggle(this)">
+        <span class="faq-num">22</span>
+        <span class="faq-q-text">Pokręciłem ustawienia i laser stracił moc — jak wrócić do domyślnych?</span>
+        <span class="faq-cat-tag cat-ogolne">Ogólne</span>
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-a"><div class="faq-a-inner">
+        <p>LightBurn nie ma prostego "Reset do fabrycznych" dla wszystkiego, ale możesz: <strong>1)</strong> Sprawdź Edit → Device Settings — zresetuj Max Speed i Acceleration do wartości z dokumentacji swojego lasera. <strong>2)</strong> Sprawdź czy nie masz wciśniętej klawisza "S" (tryb testowy bez palenia). <strong>3)</strong> W ustawieniach warstwy sprawdź czy moc nie jest przypadkowo ustawiona na 0–5%. <strong>4)</strong> Przejdź do Help → Restore Factory Settings (jeśli dostępne w Twojej wersji).</p>
+      </div></div>
+    </div>
+
+    <div class="faq-item" data-cat="ogolne" data-q="jak ciąć obrys na końcu automatyczne zamykanie krzywych optymalizacja kolejności">
+      <div class="faq-q" onclick="toggle(this)">
+        <span class="faq-num">23</span>
+        <span class="faq-q-text">Jak ustawić żeby LightBurn ciął obrys zawsze na końcu?</span>
+        <span class="faq-cat-tag cat-ogolne">Ogólne</span>
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-a"><div class="faq-a-inner">
+        <p>W panelu Cuts/Layers <strong>przeciągnij warstwę z cięciem (Line/Cut) na dół listy</strong> — LightBurn wykonuje warstwy od góry do dołu. Jeśli masz grawer (Fill) i cięcie (Line) — Fill powinien być wyżej, Line/Cut niżej. Sprawdź też Optimization Settings (przycisk przy Start) — możesz tam ustawić priorytet kolejności warstw.</p>
+      </div></div>
+    </div>
+
+    <div class="faq-item" data-cat="ogolne" data-q="ile kosztuje licencja lightburn cena trial wersja próbna">
+      <div class="faq-q" onclick="toggle(this)">
+        <span class="faq-num">24</span>
+        <span class="faq-q-text">Ile kosztuje LightBurn i czy jest darmowa wersja próbna?</span>
+        <span class="faq-cat-tag cat-ogolne">Ogólne</span>
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-a"><div class="faq-a-inner">
+        <p>LightBurn kosztuje <strong>$60 dla laserów diodowych i GRBL</strong> lub $80 dla DSP/Ruida (CO2). Jest to jednorazowa opłata z dożywotnim dostępem i rokiem darmowych aktualizacji. Dostępna jest <strong>30-dniowa wersja próbna</strong> z pełną funkcjonalnością — wystarczy pobrać ze strony lightburnsoftware.com i zainstalować bez podawania klucza.</p>
+        <div class="tip">💡 Przy cenach materiałów i maszyn — $60 za LightBurn to jeden z lepszych zakupów w laseringu.</div>
+      </div></div>
+    </div>
+
+    <div class="faq-item" data-cat="ogolne" data-q="material test jak wykonać test materiałowy siatka próbek speed power">
+      <div class="faq-q" onclick="toggle(this)">
+        <span class="faq-num">25</span>
+        <span class="faq-q-text">Jak wykonać test materiałowy w LightBurn?</span>
+        <span class="faq-cat-tag cat-ogolne">Ogólne</span>
+        <span class="faq-arrow">▼</span>
+      </div>
+      <div class="faq-a"><div class="faq-a-inner">
+        <p>Przejdź do <strong>Laser Tools → Material Test</strong>. Ustaw zakres mocy (np. 10–90%) i zakres prędkości (np. 500–3000mm/min), liczbę kolumn i wierszy siatki. LightBurn wygeneruje siatkę prostokątów z różnymi kombinacjami — każdy prostokąt jest podpisany wartościami. Wytnij/wygraweruj na kawałku docelowego materiału i wybierz najlepiej wyglądający kwadrat — to Twoje optymalne ustawienia.</p>
+        <div class="tip">💡 Rób test materiałowy dla KAŻDEGO nowego materiału. To oszczędza czas i materiał w długiej perspektywie.</div>
+      </div></div>
+    </div>
+
+  </div><!-- end faq-list -->
+
+  <div class="no-results" id="noResults">
+    <div class="emoji">🔍</div>
+    <p>Nie znaleziono wyników dla "<span id="noResultsQuery"></span>"</p>
+    <p style="font-size:.78rem;margin-top:8px;">Spróbuj innych słów kluczowych lub <a href="https://forum.lightburnsoftware.com" target="_blank" style="color:var(--orange);">zapytaj na forum LightBurn</a></p>
+  </div>
+
+  <div class="footer-note">
+    <span style="font-size:1.5rem">💡</span>
+    <p>Nie znalazłeś odpowiedzi? Sprawdź <a href="https://docs.lightburnsoftware.com" target="_blank">oficjalną dokumentację LightBurn</a> lub <a href="https://forum.lightburnsoftware.com" target="_blank">forum społeczności</a>. Masz laser i chcesz wiedzieć ile zarobić? Użyj <a href="https://laserprofit.eu/">kalkulatora wyceny LaserProfit.eu →</a></p>
+  </div>
+
+</div><!-- end container -->
+
+<script>
+let activecat = 'all';
+
+function toggle(el){
+  const item = el.closest('.faq-item');
+  const isOpen = item.classList.contains('open');
+  document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
+  if(!isOpen) item.classList.add('open');
+}
+
+function filterCat(cat, btn){
+  activecat = cat;
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('searchInput').value = '';
+  applyFilters();
+}
+
+function filterFAQ(){
+  applyFilters();
+}
+
+function applyFilters(){
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  const items = document.querySelectorAll('.faq-item');
+  let visible = 0;
+
+  items.forEach(item => {
+    const catMatch = activecat === 'all' || item.dataset.cat === activecat;
+    const searchData = (item.dataset.q + ' ' + item.querySelector('.faq-q-text').textContent).toLowerCase();
+    const aText = item.querySelector('.faq-a-inner').textContent.toLowerCase();
+    const searchMatch = q === '' || searchData.includes(q) || aText.includes(q);
+
+    if(catMatch && searchMatch){
+      item.classList.remove('hidden');
+      visible++;
+    } else {
+      item.classList.add('hidden');
+      item.classList.remove('open');
+    }
+  });
+
+  const countEl = document.getElementById('searchCount');
+  const noRes = document.getElementById('noResults');
+
+  if(q !== ''){
+    countEl.textContent = `Znaleziono: ${visible} wynik${visible === 1 ? '' : visible < 5 ? 'i' : 'ów'}`;
+  } else {
+    countEl.textContent = '';
+  }
+
+  if(visible === 0){
+    noRes.style.display = 'block';
+    document.getElementById('noResultsQuery').textContent = q;
+  } else {
+    noRes.style.display = 'none';
+  }
+}
+</script>
+</body>
+</html>
